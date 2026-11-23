@@ -132,18 +132,6 @@
   ],
   "jonathan": [
    {
-    "date": "2022-07-13T16:00:00",
-    "id": 115015,
-    "link": "https://netaful.jp/apple/0115015.html",
-    "product_name": null,
-    "thumb": {
-     "height": 500,
-     "url": "https://netaful.jp/wp-content/uploads/2022/07/51WbR9eLwOL._SL500.jpg",
-     "width": 337
-    },
-    "title": "ジョナサン・アイブ、Appleのコンサルティングを終了"
-   },
-   {
     "date": "2022-02-03T08:30:00",
     "id": 109002,
     "link": "https://netaful.jp/neta-eat/0109002.html",
@@ -180,18 +168,6 @@
     "title": "【ジョナサン】東北・三陸産の食材使用の3種の海鮮丼・和牛丼が食べられる「東北・三陸応援」フェア開催【数量限定】"
    },
    {
-    "date": "2019-06-28T10:00:00",
-    "id": 60911,
-    "link": "https://netaful.jp/apple/060911.html",
-    "product_name": "LoveFrom",
-    "thumb": {
-     "height": 199,
-     "url": "https://netaful.jp/wp-content/uploads/2019/06/slproImg_201906281023270-1-300x199.jpg",
-     "width": 300
-    },
-    "title": "ジョナサン・アイブ、Apple退社し新会社「LoveFrom」設立へ"
-   },
-   {
     "date": "2019-04-19T08:00:00",
     "id": 60404,
     "link": "https://netaful.jp/line/060404.html",
@@ -226,42 +202,10 @@
      "width": 300
     },
     "title": "ジョナサンは焼酎ミニボトルにドリンクバーが付いて499円、一品250円のつまみもあって「せんべろ」に最高ではないか？"
-   },
-   {
-    "date": "2013-09-24T09:00:00",
-    "id": 44672,
-    "link": "https://netaful.jp/apple/044672.html",
-    "product_name": "フラットデザインが流行っているのは三次元の真似をしなくてよくなったから",
-    "thumb": {
-     "height": 238,
-     "url": "https://netaful.jp/wp-content/uploads/2013/09/2013-09-24_0839-1-300x238.png",
-     "width": 300
-    },
-    "title": "ジョナサン・アイブ「フラットデザインが流行っているのは三次元の真似をしなくてよくなったから」"
-   },
-   {
-    "date": "2013-05-27T16:00:00",
-    "id": 43657,
-    "link": "https://netaful.jp/ios/043657.html",
-    "product_name": "i0S 7",
-    "thumb": {
-     "height": 179,
-     "url": "https://netaful.jp/wp-content/uploads/2013/05/2013-05-27_1338-1-300x179.png",
-     "width": 300
-    },
-    "title": "ジョナサン・アイブの手掛ける「i0S 7」白と黒を基調としたフラットデザインか？"
-   },
-   {
-    "date": "2006-01-05T12:55:24",
-    "id": 11953,
-    "link": "https://netaful.jp/apple/011953.html",
-    "product_name": null,
-    "thumb": null,
-    "title": "ジョナサン・アイブに大英勲章"
    }
   ]
  },
  "errors": [],
- "fetched_at": "2026-11-23T15:17:21+09:00",
+ "fetched_at": "2026-11-23T16:10:52+09:00",
  "matches": {}
 }
