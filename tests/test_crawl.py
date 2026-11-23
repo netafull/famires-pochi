@@ -71,6 +71,54 @@ def ids(chain):
     return sorted(p["product_id"] for p in crawl.load_chain_products(chain))
 
 
+BIGBOY = "https://www.bigboyjapan.co.jp"
+B_MENU = BIGBOY + "/menu/grand/"
+B_FAIR = BIGBOY + "/fair/"
+B_NEWS6555 = BIGBOY + "/news/fair/6555.html"
+
+OIMO_ITEMS = [
+    ("蜜いものザ・サンデー～紅天使使用", 1790, 1969, "/menu/dessert/sweet-potato-sundae/"),
+    ("蜜いものブリュレパンケーキ（パンケーキ4枚）", 980, 1078, "/menu/dessert/sweet-potato-brulee-pancakes/"),
+    ("おいもプリン", 300, 330, "/menu/dessert/sweet-potato-pudding/"),
+]
+COLLAB_ITEMS = [("麻婆牡蠣＆豆腐", 690, 759, None), ("辛味噌らぁ麺", 1450, 1595, None)]
+NEWS = [("2026/10/14", "「蜜いものザ・サンデー」&初登場「蜜いものブリュレパンケーキ」全8品10月28日（水）販売開始", "リード"),
+        ("2026/10/1", "デニーズ×飯田商店 監修の新境地！ 10月14日（水）スタート", "リード")]
+
+
+def dennys_site(oimo=OIMO_ITEMS, collab=COLLAB_ITEMS, news=NEWS, fairs=None):
+    s = FakeSite()
+    s.set(DENNYS + "/robots.txt", NotFoundError("404"))
+    s.set(D_MENU, S.dennys_menu(fairs) if fairs else S.dennys_menu())
+    s.set(D_OIMO, S.dennys_fair("蜜いもデザート", oimo))
+    s.set(D_COLLAB, S.dennys_fair("飯田商店監修「味噌らぁ麺」", collab))
+    s.set(D_NEWS, S.dennys_news(news))
+    return s
+
+
+def jonathan_site(fair_alt=S.JONATHAN_FAIR_ALT, dessert_alt=None, slugs=("collab", "fair", "dessert", "drink_bar")):
+    s = FakeSite()
+    s.set(SKY + "/robots.txt", "User-agent: *\nAllow: /\nDisallow: /company/\n")
+    s.set(J_TOP, S.jonathan_top(slugs))
+    s.set(J_FAIR, S.jonathan_page("秋のよくばりマルシェ", [fair_alt]))
+    dessert_alt = dessert_alt or S.alt(("季節のジョナパフェ（早生みかん）", 999, 1099))
+    s.set(J_DESSERT, S.jonathan_page("しあわせ早生みかん", [dessert_alt]))
+    return s
+
+
+def bigboy_site(items=S.BIGBOY_ITEMS, article=S.bigboy_news_article):
+    s = FakeSite()
+    s.set(BIGBOY + "/robots.txt", NotFoundError("404"))
+    s.set(B_MENU, S.bigboy_grand_menu(items))
+    s.set(B_FAIR, S.bigboy_fair_list())
+    s.set(B_NEWS6555, article() if callable(article) else article)
+    return s
+
+
+def ids(chain):
+    return sorted(p["product_id"] for p in crawl.load_chain_products(chain))
+
+
 class TestConfig(unittest.TestCase):
     def test_user_agent_is_plain_and_honest(self):
         self.assertEqual(crawl.UA, "FamiresPochi/1.0 (+https://famires.netaful.jp/)")
@@ -78,11 +126,11 @@ class TestConfig(unittest.TestCase):
 
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
-        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["cocos", "dennys", "jonathan"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10})
-        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20})
+        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan"])
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20})
+        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
-        for c in ("dennys", "jonathan", "cocos"):
+        for c in ("dennys", "jonathan", "cocos", "bigboy"):
             self.assertGreaterEqual(cfg["request_interval_seconds"][c], 3)
 
     def test_site_identity_and_ads(self):
@@ -487,6 +535,97 @@ class TestCocosCrawl(unittest.TestCase):
             self.assertEqual(pend["cocos"]["_suspected_restructure"]["threshold"], 20)
 
 
+class TestBigboyCrawl(unittest.TestCase):
+    def test_first_run_records_all_limited_items_with_facts_only(self):
+        with TempData():
+            site = bigboy_site()
+            _, st = run_chain(crawl.crawl_bigboy, site, "2026-11-23")
+            self.assertTrue(st["bigboy"]["list_ok"])
+            self.assertEqual(len(ids("bigboy")), 3)
+            p = [x for x in crawl.load_chain_products("bigboy") if x["name"] == "牡蠣フライ＆大俵ハンバーグ"][0]
+            self.assertEqual((p["price"], p["price_max"], p["price_excl_tax"]), (1639, 2035, 1490))
+            self.assertEqual(p["price_variants"],
+                             [{"label": "大俵150g", "price": 1639}, {"label": "大俵200g", "price": 1815},
+                              {"label": "大俵250g", "price": 2035}])
+            self.assertEqual(p["price_history"], [{"date": "2026-11-23", "price": 1639, "price_max": 2035}])
+            self.assertEqual(p["fair"], "期間限定メニュー")
+            self.assertEqual(p["official_url"], B_MENU)
+            self.assertIn("一部店舗", p["stores_note"])
+            for prod_ in crawl.load_chain_products("bigboy"):
+                blob = json.dumps(prod_, ensure_ascii=False)
+                for k in ("image", "photo", "description", "lead", "nutrition", "allergen"):
+                    self.assertNotIn(k, blob)
+
+    def test_request_count_stays_within_cap(self):
+        with TempData():
+            site = bigboy_site()
+            run_chain(crawl.crawl_bigboy, site, "2026-11-23")
+            # robots・グランドメニュー・フェア一覧・ニュース記事1本
+            self.assertEqual(len(site.calls), 4)
+            self.assertLessEqual(len(site.calls), crawl.CONFIG["max_requests_per_run"]["bigboy"])
+
+    def test_launch_date_from_news_by_product_name(self):
+        with TempData():
+            run_chain(crawl.crawl_bigboy, bigboy_site(), "2026-11-23")
+            sundae = [x for x in crawl.load_chain_products("bigboy")
+                      if x["name"] == "甘栗のモンブランファッジサンデー"][0]
+            self.assertEqual((sundae["launch_date"], sundae["launch_date_source"]), ("2026-10-20", "official_news"))
+            self.assertEqual(sundae["news_url"], B_NEWS6555)
+            # 記事に名前が出ない商品は開始日なし(記録開始日)
+            kaki = [x for x in crawl.load_chain_products("bigboy") if x["name"] == "牡蠣フライ＆手ごねハンバーグ"][0]
+            self.assertIsNone(kaki["launch_date"])
+
+    def test_news_failure_does_not_stop_recording(self):
+        with TempData():
+            site = bigboy_site()
+            site.set(B_FAIR, RuntimeError("timeout"))
+            _, st = run_chain(crawl.crawl_bigboy, site, "2026-11-23")
+            self.assertEqual(len(ids("bigboy")), 3)
+            self.assertTrue(st["bigboy"]["list_ok"])
+            self.assertTrue(all(p["launch_date"] is None for p in crawl.load_chain_products("bigboy")))
+
+    def test_ended_after_two_misses_on_different_days(self):
+        with TempData():
+            run_chain(crawl.crawl_bigboy, bigboy_site(), "2026-11-23")
+            fewer = bigboy_site(items=S.BIGBOY_ITEMS[:2])
+            run_chain(crawl.crawl_bigboy, fewer, "2026-11-24")
+            run_chain(crawl.crawl_bigboy, fewer, "2026-11-25")
+            sundae = [x for x in crawl.load_chain_products("bigboy")
+                      if x["name"] == "甘栗のモンブランファッジサンデー"][0]
+            self.assertEqual((sundae["status"], sundae["ended_observed_at"]), ("ended", "2026-11-25"))
+
+    def test_missing_section_or_no_price_is_incomplete_and_nothing_ends(self):
+        with TempData():
+            run_chain(crawl.crawl_bigboy, bigboy_site(), "2026-11-23")
+            for broken_html in ("<html>変わった</html>", S.bigboy_grand_menu(items=[("価格なし商品", [])])):
+                site = bigboy_site()
+                site.set(B_MENU, broken_html)
+                for d in ("2026-11-24", "2026-11-25"):
+                    _, st = run_chain(crawl.crawl_bigboy, site, d)
+                    self.assertFalse(st["bigboy"]["list_ok"])
+            self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("bigboy")))
+
+    def test_blocked_stops_without_workaround(self):
+        with TempData():
+            site = bigboy_site()
+            site.set(B_MENU, BlockedError("HTTP 403"))
+            _, st = run_chain(crawl.crawl_bigboy, site, "2026-11-23")
+            self.assertTrue(st["bigboy"]["blocked"])
+            self.assertFalse(st["bigboy"]["list_ok"])
+
+    def test_robots_disallow_skips(self):
+        with TempData():
+            site = bigboy_site()
+            site.set(BIGBOY + "/robots.txt", "User-agent: *\nDisallow: /menu/\n")
+            run_chain(crawl.crawl_bigboy, site, "2026-11-23")
+            self.assertEqual(ids("bigboy"), [])
+            self.assertNotIn(B_MENU, site.calls)
+
+    def test_burst_threshold_value(self):
+        self.assertEqual(crawl.burst_threshold("bigboy", 9), 15)
+        self.assertEqual(crawl.burst_threshold("bigboy", 100), 60)
+
+
 class TestTouchSeen(unittest.TestCase):
     def new_prod(self, **kw):
         p = crawl.base_product("dennys", "1", "テスト", "2026-11-03T07:00:00+09:00", "2026-11-03")
@@ -547,7 +686,7 @@ class TestHealthAndSummary(unittest.TestCase):
 
     def test_main_rejects_unknown_chain(self):
         self.assertEqual(crawl.main(["starbucks"]), 2)
-        self.assertEqual(sorted(crawl.CRAWLERS), ["cocos", "dennys", "jonathan"])
+        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan"])
 
     def test_one_chain_exception_does_not_stop_the_other(self):
         def boom(getter, pending, stats, today=None):
