@@ -15,6 +15,7 @@ from fetch import BlockedError, NotFoundError  # noqa: E402,F401
 
 DENNYS = "https://www.dennys.jp"
 SKY = "https://www.skylark.co.jp"
+JOYFULL = "https://www.joyfull.co.jp"
 
 
 class FakeSite:

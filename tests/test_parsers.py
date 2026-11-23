@@ -312,5 +312,89 @@ class TestBigboyNews(unittest.TestCase):
 
 
 
+class TestJoyfullPrice(unittest.TestCase):
+    def test_fullwidth_yen_pair(self):
+        self.assertEqual(P.parse_joyfull_price_pair("￥1,299 （税込￥1,428）"), (1299, 1428))
+        self.assertEqual(P.parse_joyfull_price_pair("￥839\n（税込￥922）"), (839, 922))
+
+    def test_common_format_is_not_read(self):
+        # 「N円（税込M円）」はデニーズ・ジョナサンの書式で、ジョイフルのパーサでは取らない
+        self.assertIsNone(P.parse_joyfull_price_pair("1,790円（税込1,969円）"))
+        self.assertIsNone(P.parse_joyfull_price_pair("おまかせ"))
+
+
+class TestJoyfullListedLaunch(unittest.TestCase):
+    def test_prefix_with_year_and_hour(self):
+        self.assertEqual(P.parse_joyfull_listed_launch("【2026年12月1日（火）15時より販売】日向翔陽のハンバーグ"), "2026-12-01")
+
+    def test_no_prefix(self):
+        self.assertIsNone(P.parse_joyfull_listed_launch("「幻のコショウのチキン竜田」"))
+        self.assertIsNone(P.parse_joyfull_listed_launch("【数量限定】テスト"))
+        self.assertIsNone(P.parse_joyfull_listed_launch(None))
+
+
+class TestJoyfullCategory(unittest.TestCase):
+    ITEMS = [(602, "【2026年12月1日（火）15時より販売】テストハンバーグ", 1299, 1428),
+             (527, "「幻のコショウのチキン竜田」", 939, 1032)]
+
+    def test_items_prices_and_numeric_ids(self):
+        page = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))
+        self.assertEqual(page["declared_count"], 2)
+        self.assertEqual([i["pid"] for i in page["items"]], ["602", "527"])
+        first = page["items"][0]
+        self.assertEqual((first["price"], first["price_excl_tax"]), (1428, 1299))
+        self.assertEqual(first["listed_launch"], "2026-12-01")
+        self.assertEqual(first["link"], "/menu/602")
+        self.assertIsNone(page["items"][1]["listed_launch"])
+
+    def test_ids_are_stable_across_runs(self):
+        a = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
+        b = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
+        self.assertEqual([i["pid"] for i in a], [i["pid"] for i in b])
+
+    def test_commented_out_card_is_ignored(self):
+        html = S.joyfull_list(self.ITEMS, commented='<li class="mg-item"><a href="https://www.joyfull.co.jp/menu/999" class="menu-card"><h3 class="mg-title">幻</h3><p class="menu-meta">￥100 （税込￥110）</p></a></li>')
+        self.assertEqual(len(P.parse_joyfull_category(html)["items"]), 2)
+
+    def test_missing_structure_is_error(self):
+        with self.assertRaises(ValueError):
+            P.parse_joyfull_category("<html><body>構造が変わった</body></html>")
+
+    def test_card_without_price_is_skipped(self):
+        html = S.joyfull_list(self.ITEMS).replace("￥939", "価格は店頭で")
+        page = P.parse_joyfull_category(html)
+        self.assertEqual([i["pid"] for i in page["items"]], ["602"])
+        self.assertEqual(page["declared_count"], 2)  # 呼び出し側が差を見て「不完全」にする
+
+
+class TestJoyfullDetail(unittest.TestCase):
+    def test_fair_from_breadcrumb(self):
+        self.assertEqual(P.parse_joyfull_detail(S.joyfull_detail("世界の山ちゃんフェア", "商品A")), {"fair": "世界の山ちゃんフェア"})
+
+    def test_no_fair_is_none(self):
+        self.assertEqual(P.parse_joyfull_detail(S.joyfull_detail(None, "商品A")), {"fair": None})
+
+    def test_broken_breadcrumb_is_error(self):
+        with self.assertRaises(ValueError):
+            P.parse_joyfull_detail("<html>構造が変わった</html>")
+        bad = S.joyfull_detail("フェア", "商品A").replace("季節・期間限定", "グランドメニュー")
+        with self.assertRaises(ValueError):
+            P.parse_joyfull_detail(bad)
+
+
+class TestJoyfullNews(unittest.TestCase):
+    def test_entries(self):
+        news = P.parse_joyfull_news(S.joyfull_news([
+            (99, "2026.10.02", "【ジョイフル】「世界の山ちゃんフェア」2026年10月13日（火）15時より販売開始!!"),
+            (91, "2026.09.30", "2026年10月6日（火）15時販売開始！「2026秋冬 新グランドメニュー」")]))
+        self.assertEqual(news[0]["date"], "2026-10-02")
+        self.assertEqual(news[0]["url"], "https://www.joyfull.co.jp/news/99")
+        self.assertIn("世界の山ちゃんフェア", news[0]["title"])
+
+    def test_garbage_is_empty(self):
+        self.assertEqual(P.parse_joyfull_news("<html>変わった</html>"), [])
+
+
+
 if __name__ == "__main__":
     unittest.main()

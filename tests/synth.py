@@ -161,3 +161,61 @@ def bigboy_news_article(date: str = "2026/10/14",
             f'<p class="post_icon icon_fair">フェア情報</p><p class="item">{title}</p></div>'
             f'<p class="item_detail"><p>{body}</p></p>'
             f'</li></ul></section></body></html>')
+def joyfull_list(items=(), declared=None, commented: str = "") -> str:
+    """items: [(数値ID, 名前, 税抜, 税込)]。公式の一覧(季節・期間限定)の最小の写し。"""
+    if declared is None:
+        declared = len(items)
+    cards = ""
+    for pid, name, ex, inc in items:
+        cards += f"""<li class="mg-item">
+          <a href="https://www.joyfull.co.jp/menu/{pid}" class="menu-card span-4 hover-scale-trigger">
+            <div class="hover-scale-wrap">
+              <img src="https://www.joyfull.co.jp/menu/{pid}/image" class="menu-thumb hover-scale-img" width="344" height="212" loading="lazy" alt="{name}">
+            </div>
+            <div class="menu-body">
+              <h3 class="mg-title">{name}</h3>
+              <p class="menu-meta">
+                ￥{ex:,}
+                <span class="inline-block">（<span class="small">税込</span>￥{inc:,}）</span>
+              </p>
+            </div>
+          </a>
+        </li>
+"""
+    return f"""<html><body><main>
+<h2 class="sec-title">季節・期間限定</h2>
+<span class="result-count">該当件数 <span class="count">{declared}</span>件</span>
+<ul class="menu-grid grid-row-middle">
+{cards}</ul>
+<!-- {commented} -->
+</main></body></html>"""
+
+
+def joyfull_detail(fair: str | None, name: str) -> str:
+    """商品ページのパンくずだけの最小の写し。fair が None ならフェアの要素が無い並び。"""
+    names = ["ホーム", "メニュー", "季節・期間限定"] + ([fair] if fair else []) + [name]
+    lis = "".join(
+        f'<li class="bl-item" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">'
+        f'<a href="https://www.joyfull.co.jp" itemprop="item"><span itemprop="name">{n}</span></a>'
+        f'<meta itemprop="position" content="{i + 1}"></li>' for i, n in enumerate(names))
+    return (f'<html><body><nav class="breadcrumb" aria-label="パンくず"><div class="container">'
+            f'<ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">{lis}</ol>'
+            f'</div></nav><h1>{name}</h1></body></html>')
+
+
+def joyfull_news(entries=()) -> str:
+    """entries: [(数値ID, 日付 YYYY.MM.DD, 見出し)]。お知らせ(メニュー分類)の一覧の最小の写し。"""
+    cards = ""
+    for nid, d, title in entries:
+        cards += f"""<a href="https://www.joyfull.co.jp/news/{nid}" class="menu-card span-4 hover-float" data-cat="menu">
+          <div class="news-card-image"><img src="https://www.joyfull.co.jp/news/{nid}/image_thumb" class="menu-thumb" width="344" height="212" loading="lazy" alt="{title}"></div>
+          <div class="news-body">
+            <div class="news-meta">
+              <span class="chip">メニュー</span>
+              <span class="date">{d}</span>
+            </div>
+            <h3 class="news-title">{title}</h3>
+          </div>
+        </a>
+"""
+    return f'<html><body><main><div class="menu-grid">{cards}</div></main></body></html>'
