@@ -70,3 +70,44 @@ def jonathan_page(title: str, alts=(JONATHAN_FAIR_ALT,)) -> str:
 def alt(*pairs) -> str:
     """alt を作る: [(名前, 税抜, 税込)] → 「名前 1,000円（税込1,100円）。」の連結"""
     return "".join(f"{n} {ex:,}円（税込{inc:,}円）。" for n, ex, inc in pairs)
+
+
+def cocos_fair_page(fairs=(("ココスの期間限定スイーツ",
+                            [("勤労感謝の芋栗かぼちゃクレープ", 590, 649,
+                              "/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html")]),
+                           ("マロンフェア",
+                            [("マロンとチョコのパフェ", 1290, 1419,
+                              "/menu/fair/marron2610/shinemuscat_parfait2609.html"),
+                             ("マロンのもちもちクレープ", 590, 649,
+                              "/menu/fair/marron2610/shinemuscat_crepe2609.html")])), commented: str = "") -> str:
+    """fairs: [(フェア名, [(名前, 税抜, 税込, 詳細ページのパス or None)])]。価格は ¥ 表記(税込側は「¥ 649」)。"""
+    sections = ""
+    for title, items in fairs:
+        lis = ""
+        for name, ex, inc, link in items:
+            lis += (f'<li><a href="{link or ""}">'
+                    f'<figure><img data-src="/x.jpg" alt=""></figure>'
+                    f'<div class="menu_info">'
+                    f'<div class="label"><span class="new">NEW</span><span class="limited">期間限定</span></div>'
+                    f'<div class="name">{name}</div>'
+                    f'<div class="price"><span class="tax_ex"><span>¥</span>{ex:,}</span>'
+                    f'<span class="tax_in">(<span>税込</span>¥ {inc:,})</span></div>'
+                    f'</div></a></li>\n')
+        sections += f'<h2>{title}</h2>\n<ul class="img_link type_menu_list">\n{lis}</ul>\n'
+    return f"""<html><body><section class="menu_wrap"><div class="base_entry">
+<p>販売時間は10:00～ラストオーダーです。<br>※一部店舗で取扱商品、販売時間帯、価格が異なる場合がございます。</p>
+{sections}<h2>ココス公式アプリCoco's App</h2>
+<!-- {commented} -->
+</div></section></body></html>"""
+
+
+def cocos_news(entries=()) -> str:
+    """entries: [(記事のパス, 掲載日 YYYY-MM-DD, 見出し)]"""
+    lis = ""
+    for path, d, title in entries:
+        y, m, dd = d.split("-")
+        lis += (f'<li><a href="{path}" >\n'
+                f'      <span class="label menu">メニュー</span>\n'
+                f'      <span class="date" data-postdate="{d}">{y}/{m}/{dd}</span>\n'
+                f'      <p>{title}</p>\n    </a></li>\n')
+    return f'<html><body><div class="tab_cont"><ul>\n{lis}</ul></div></body></html>'

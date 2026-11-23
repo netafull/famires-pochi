@@ -15,6 +15,27 @@ D_COLLAB = DENNYS + "/menu/collaboration17/"
 J_TOP = SKY + "/jonathan/menu/"
 J_FAIR = SKY + "/jonathan/menu/fair/index.html"
 J_DESSERT = SKY + "/jonathan/menu/dessert/index.html"
+COCOS = "https://www.cocos-jpn.co.jp"
+C_FAIR = COCOS + "/menu/fair/"
+C_NEWS = COCOS + "/news/2026/menu/"
+
+COCOS_NEWS = [
+    ("/news/2026/menu/1119-122027.html", "2026-11-19",
+     "本日より販売開始！ココスの期間限定スイーツ！「勤労感謝の芋栗かぼちゃクレープ」、ココウェブで200円引きクーポン配信中！"),
+    ("/news/2026/menu/1105-122026.html", "2026-11-05",
+     "【11月19日(木)開始】ココスの期間限定スイーツ！「勤労感謝の芋栗かぼちゃクレープ」、ココウェブで200円引きクーポンを配信します！"),
+    ("/news/2026/menu/1006-115296.html", "2026-10-06",
+     "【10月13日(火)開始】濃厚なチョコや甘酸っぱいカシスが上品な甘さのマロンを引き立てる！ココスが「マロンフェア」を開催！"),
+]
+
+
+def cocos_site(fairs=None, news=COCOS_NEWS):
+    s = FakeSite()
+    # 実サーバーは robots.txt が無く、存在しないパスに 403 でエラーページを返す
+    s.set(COCOS + "/robots.txt", BlockedError("HTTP 403"))
+    s.set(C_FAIR, S.cocos_fair_page(fairs) if fairs is not None else S.cocos_fair_page())
+    s.set(C_NEWS, S.cocos_news(news))
+    return s
 
 OIMO_ITEMS = [
     ("蜜いものザ・サンデー～紅天使使用", 1790, 1969, "/menu/dessert/sweet-potato-sundae/"),
@@ -57,11 +78,11 @@ class TestConfig(unittest.TestCase):
 
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
-        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["dennys", "jonathan"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5})
-        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15})
+        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["cocos", "dennys", "jonathan"])
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10})
+        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
-        for c in ("dennys", "jonathan"):
+        for c in ("dennys", "jonathan", "cocos"):
             self.assertGreaterEqual(cfg["request_interval_seconds"][c], 3)
 
     def test_site_identity_and_ads(self):
@@ -252,6 +273,7 @@ class TestDennysCrawl(unittest.TestCase):
         self.assertEqual(crawl.burst_threshold("dennys", 10), 20)
         self.assertEqual(crawl.burst_threshold("jonathan", 10), 15)
         self.assertEqual(crawl.burst_threshold("jonathan", 50), 30)  # 一覧×0.6 のほうが大きいとき
+        self.assertEqual(crawl.burst_threshold("cocos", 10), 20)
 
 
 class TestJonathanCrawl(unittest.TestCase):
@@ -336,6 +358,135 @@ class TestJonathanCrawl(unittest.TestCase):
             self.assertIn("_suspected_restructure", pend["jonathan"])
 
 
+class TestCocosCrawl(unittest.TestCase):
+    def test_first_run_records_all_fair_items_with_facts_only(self):
+        with TempData():
+            site = cocos_site()
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertTrue(st["cocos"]["list_ok"])
+            self.assertEqual(len(ids("cocos")), 3)
+            p = helpers.prod("cocos", "limited_sweets-roasted_sweet_potato_crepe2611")
+            self.assertEqual((p["name"], p["price"], p["price_excl_tax"]), ("勤労感謝の芋栗かぼちゃクレープ", 649, 590))
+            self.assertEqual(p["fair"], "ココスの期間限定スイーツ")
+            self.assertEqual(p["official_url"], COCOS + "/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html")
+            self.assertEqual(p["price_history"], [{"date": "2026-11-23", "price": 649}])
+            self.assertIn("一部の店舗", p["stores_note"])
+            for prod_ in crawl.load_chain_products("cocos"):
+                blob = json.dumps(prod_, ensure_ascii=False)
+                for k in ("image", "photo", "description", "lead", "nutrition", "allergen"):
+                    self.assertNotIn(k, blob)
+
+    def test_robots_txt_403_is_treated_as_no_robots_and_requests_stay_small(self):
+        with TempData():
+            site = cocos_site()
+            run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            # robots.txt(403)・フェアページ・ニュースの3リクエストだけ
+            self.assertEqual(len(site.calls), 3)
+            self.assertLessEqual(len(site.calls), crawl.CONFIG["max_requests_per_run"]["cocos"])
+
+    def test_robots_txt_429_stays_blocked(self):
+        with TempData():
+            site = cocos_site()
+            site.set(COCOS + "/robots.txt", BlockedError("HTTP 429: https://www.cocos-jpn.co.jp/robots.txt"))
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertTrue(st["cocos"]["blocked"])
+            self.assertEqual(ids("cocos"), [])
+
+    def test_robots_txt_challenge_stays_blocked(self):
+        with TempData():
+            site = cocos_site()
+            site.set(COCOS + "/robots.txt", BlockedError("challenge page detected: https://www.cocos-jpn.co.jp/robots.txt"))
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertTrue(st["cocos"]["blocked"])
+            self.assertEqual(ids("cocos"), [])
+
+    def test_exclude_words_skip_toppings(self):
+        with TempData():
+            fairs = (("マロンフェア",
+                      [("マロンとチョコのパフェ", 1290, 1419,
+                        "/menu/fair/marron2610/shinemuscat_parfait2609.html"),
+                       ("追加カシスシロップ", 80, 88, None)]),)
+            _, st = run_chain(crawl.crawl_cocos, cocos_site(fairs=fairs), "2026-11-23")
+            self.assertTrue(st["cocos"]["list_ok"])
+            names = [p["name"] for p in crawl.load_chain_products("cocos")]
+            self.assertEqual(names, ["マロンとチョコのパフェ"])
+
+    def test_launch_date_from_news_by_product_name_and_fair_name(self):
+        with TempData():
+            run_chain(crawl.crawl_cocos, cocos_site(), "2026-11-23")
+            crepe = helpers.prod("cocos", "limited_sweets-roasted_sweet_potato_crepe2611")
+            self.assertEqual((crepe["launch_date"], crepe["launch_date_source"]), ("2026-11-19", "official_news"))
+            self.assertEqual(crepe["news_url"], COCOS + "/news/2026/menu/1105-122026.html")
+            parfait = helpers.prod("cocos", "marron2610-shinemuscat_parfait2609")
+            self.assertEqual((parfait["launch_date"], parfait["launch_date_source"]), ("2026-10-13", "official_news_fair"))
+
+    def test_unmatched_news_leaves_recording_start(self):
+        with TempData():
+            news = [("/news/2026/menu/1.html", "2026-11-05", "全く別の発表【11月19日(木)開始】")]
+            run_chain(crawl.crawl_cocos, cocos_site(news=news), "2026-11-23")
+            self.assertTrue(all(p["launch_date"] is None for p in crawl.load_chain_products("cocos")))
+
+    def test_news_failure_does_not_stop_recording(self):
+        with TempData():
+            site = cocos_site()
+            site.set(C_NEWS, RuntimeError("timeout"))
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertEqual(len(ids("cocos")), 3)
+            self.assertTrue(st["cocos"]["list_ok"])
+
+    def test_ended_after_two_misses_on_different_days(self):
+        with TempData():
+            run_chain(crawl.crawl_cocos, cocos_site(), "2026-11-23")
+            fewer = cocos_site(fairs=(("ココスの期間限定スイーツ",
+                                       [("勤労感謝の芋栗かぼちゃクレープ", 590, 649,
+                                         "/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html")]),
+                                      ("マロンフェア",
+                                       [("マロンとチョコのパフェ", 1290, 1419,
+                                         "/menu/fair/marron2610/shinemuscat_parfait2609.html")])))
+            run_chain(crawl.crawl_cocos, fewer, "2026-11-24")
+            run_chain(crawl.crawl_cocos, fewer, "2026-11-25")
+            p = helpers.prod("cocos", "marron2610-shinemuscat_crepe2609")
+            self.assertEqual((p["status"], p["ended_observed_at"]), ("ended", "2026-11-25"))
+            self.assertEqual(helpers.prod("cocos", "marron2610-shinemuscat_parfait2609")["status"], "on_sale")
+
+    def test_fair_section_without_items_is_incomplete_and_nothing_ends(self):
+        with TempData():
+            run_chain(crawl.crawl_cocos, cocos_site(), "2026-11-23")
+            broken = cocos_site(fairs=(("ココスの期間限定スイーツ",
+                                        [("勤労感謝の芋栗かぼちゃクレープ", 590, 649,
+                                          "/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html")]),
+                                       ("マロンフェア", [])))
+            for d in ("2026-11-24", "2026-11-25", "2026-11-26"):
+                _, st = run_chain(crawl.crawl_cocos, broken, d)
+                self.assertFalse(st["cocos"]["list_ok"])
+            self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("cocos")))
+
+    def test_structure_change_is_list_failed(self):
+        with TempData():
+            site = cocos_site()
+            site.set(C_FAIR, "<html>変わった</html>")
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertFalse(st["cocos"]["list_ok"])
+            self.assertEqual(ids("cocos"), [])
+
+    def test_blocked_fair_page_stops(self):
+        with TempData():
+            site = cocos_site()
+            site.set(C_FAIR, BlockedError("HTTP 403"))
+            _, st = run_chain(crawl.crawl_cocos, site, "2026-11-23")
+            self.assertTrue(st["cocos"]["blocked"])
+            self.assertFalse(st["cocos"]["list_ok"])
+
+    def test_burst_guard_holds_a_restructure(self):
+        with TempData():
+            run_chain(crawl.crawl_cocos, cocos_site(), "2026-11-23")  # baseline: 3件
+            many = [(f"別{i}", 500, 550, f"/menu/fair/chg/x{i}.html") for i in range(25)]
+            pend, st = run_chain(crawl.crawl_cocos, cocos_site(fairs=(("別フェア", many),)), "2026-11-24")
+            self.assertEqual(st["cocos"]["new_products"], 0)
+            self.assertFalse(st["cocos"]["list_ok"])
+            self.assertEqual(pend["cocos"]["_suspected_restructure"]["threshold"], 20)
+
+
 class TestTouchSeen(unittest.TestCase):
     def new_prod(self, **kw):
         p = crawl.base_product("dennys", "1", "テスト", "2026-11-03T07:00:00+09:00", "2026-11-03")
@@ -396,7 +547,7 @@ class TestHealthAndSummary(unittest.TestCase):
 
     def test_main_rejects_unknown_chain(self):
         self.assertEqual(crawl.main(["starbucks"]), 2)
-        self.assertEqual(sorted(crawl.CRAWLERS), ["dennys", "jonathan"])
+        self.assertEqual(sorted(crawl.CRAWLERS), ["cocos", "dennys", "jonathan"])
 
     def test_one_chain_exception_does_not_stop_the_other(self):
         def boom(getter, pending, stats, today=None):
