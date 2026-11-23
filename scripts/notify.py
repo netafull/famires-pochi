@@ -33,7 +33,7 @@ from pathlib import Path
 SITE_NAME = "ファミレスポチ"
 ROOT = Path(__file__).resolve().parent.parent
 RUN_SUMMARY = ROOT / "data" / "run_summary.json"
-CHAIN_LABEL = {"dennys": "デニーズ", "jonathan": "ジョナサン"}
+CHAIN_LABEL = {"dennys": "デニーズ", "jonathan": "ジョナサン", "cocos": "ココス"}
 
 
 def send(topic: str, title: str, message: str, click: str = "", priority: int = 0) -> None:

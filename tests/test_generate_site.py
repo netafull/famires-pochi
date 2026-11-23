@@ -100,6 +100,17 @@ class TestItemPage(unittest.TestCase):
         self.assertIn("出典：ジョナサン公式サイト", h)
         self.assertIn("秋のよくばりマルシェ", h)
 
+    def test_cocos_item(self):
+        it = item(chain="cocos", pid="limited_sweets-roasted_sweet_potato_crepe2611", name="勤労感謝の芋栗かぼちゃクレープ",
+                  fair="ココスの期間限定スイーツ",
+                  official_url="https://www.cocos-jpn.co.jp/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html",
+                  launch_date="2026-11-19", launch_date_source="official_news")
+        h = G.render_item_page(it)
+        self.assertIn("出典：ココス公式サイト", h)
+        self.assertIn("ココスの期間限定スイーツ", h)
+        self.assertIn("2026-11-19〜 販売中", h)
+        self.assertIn("<title>ココス「勤労感謝の芋栗かぼちゃクレープ」の価格・販売期間｜ファミレスポチ</title>", h)
+
 
 class TestSameName(unittest.TestCase):
     def test_same_name_gets_a_qualifier(self):
@@ -123,7 +134,7 @@ class TestLists(unittest.TestCase):
         self.assertNotIn("カロリー順", h)
         self.assertEqual(len(re.findall(r"<h1[ >]", h)), 1)
         self.assertIn('"name": "ファミレスポチ"', h)
-        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサンの期間限定メニュー記録</title>", h)
+        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココスの期間限定メニュー記録</title>", h)
 
     def test_card_has_no_image_besides_category_icon(self):
         for m in re.finditer(r"<img[^>]+>", G.render_card(self.items[0])):
@@ -165,6 +176,7 @@ class TestSiteFiles(unittest.TestCase):
                 self.assertEqual(G.main(), 0)
             self.assertTrue((base / "docs" / "index.html").is_file())
             self.assertTrue((base / "docs" / "chains" / "jonathan" / "index.html").is_file())
+            self.assertTrue((base / "docs" / "chains" / "cocos" / "index.html").is_file())
             self.assertEqual((base / "docs" / "CNAME").read_text(), "famires.netaful.jp\n")
             self.assertTrue((base / "docs" / "items" / "dennys-dessert-sweet-potato-sundae.html").is_file())
 
@@ -199,6 +211,8 @@ class TestChainColors(unittest.TestCase):
         css = G.build_css()
         self.assertIn("--dennys: #B71C1C", css)
         self.assertIn("--jonathan: #1B5E20", css)
+        self.assertIn("--cocos: #E65100", css)
+        self.assertIn("--cocos: #FFB74D", css)
         self.assertIn("prefers-color-scheme: dark", css)
 
 

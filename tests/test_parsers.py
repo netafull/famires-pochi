@@ -160,5 +160,85 @@ class TestJonathanPages(unittest.TestCase):
             P.parse_jonathan_fair_page("<html>変わった</html>", "fair")
 
 
+class TestCocosPriceYenPair(unittest.TestCase):
+    def test_yen_pair_with_space_after_yen_sign(self):
+        html = '<span class="tax_ex"><span>¥</span>590</span><span class="tax_in">(<span>税込</span>¥ 649)</span>'
+        self.assertEqual(P.parse_price_yen_pair(html), (590, 649))
+        self.assertEqual(P.parse_price_yen_pair("¥1,280(税込¥ 1,408)"), (1280, 1408))
+        self.assertEqual(P.parse_price_yen_pair("¥80(税込¥ 88)"), (80, 88))
+
+    def test_yen_format_is_not_read_by_the_yen_word_parser(self):
+        # 共通の parse_price_pair(円表記用)では取れない。だから専用の正規表現が要る
+        self.assertIsNone(P.parse_price_pair("¥590(税込¥ 649)"))
+        self.assertIsNone(P.parse_price_yen_pair("1,790円（税込1,969円）"))
+        self.assertIsNone(P.parse_price_yen_pair("おまかせ"))
+
+
+class TestCocosFairPage(unittest.TestCase):
+    def test_sections_items_prices_and_path_ids(self):
+        sections = P.parse_cocos_fair_page(S.cocos_fair_page())
+        self.assertEqual([s["title"] for s in sections], ["ココスの期間限定スイーツ", "マロンフェア"])
+        first = sections[0]["items"][0]
+        self.assertEqual(first["pid"], "limited_sweets-roasted_sweet_potato_crepe2611")
+        self.assertEqual((first["name"], first["price"], first["price_excl_tax"]),
+                         ("勤労感謝の芋栗かぼちゃクレープ", 649, 590))
+        self.assertEqual(first["link"], "/menu/fair/limited_sweets/roasted_sweet_potato_crepe2611.html")
+        marron = sections[1]["items"]
+        self.assertEqual([i["pid"] for i in marron],
+                         ["marron2610-shinemuscat_parfait2609", "marron2610-shinemuscat_crepe2609"])
+        self.assertEqual((marron[0]["price"], marron[0]["price_excl_tax"]), (1419, 1290))
+
+    def test_item_without_link_uses_name_hash(self):
+        html = S.cocos_fair_page((("フェア", [("リンクなし商品", 100, 110, None)]),))
+        it = P.parse_cocos_fair_page(html)[0]["items"][0]
+        self.assertEqual(it["pid"], P.stable_id("cocos", "リンクなし商品"))
+        self.assertIsNone(it["link"])
+
+    def test_non_fair_h2_sections_are_ignored(self):
+        # 「ココス公式アプリ」等の h2 は type_menu_list を伴わないのでフェアにしない
+        sections = P.parse_cocos_fair_page(S.cocos_fair_page())
+        self.assertNotIn("ココス公式アプリCoco's App", [s["title"] for s in sections])
+
+    def test_commented_out_item_is_ignored(self):
+        commented = ('<h2>旧フェア</h2><ul class="img_link type_menu_list"><li><a href="/menu/fair/old/x.html">'
+                     '<div class="name">幻</div><div class="price">¥100(税込¥ 110)</div></a></li></ul>')
+        sections = P.parse_cocos_fair_page(S.cocos_fair_page(commented=commented))
+        self.assertEqual([s["title"] for s in sections], ["ココスの期間限定スイーツ", "マロンフェア"])
+
+    def test_no_price_means_empty_items_and_no_section_is_error(self):
+        html = ('<html><body><h2>画像だけ</h2><ul class="img_link type_menu_list">'
+                '<li><a href="/menu/fair/x/a.html"><div class="menu_info">'
+                '<div class="name">価格は画像の中の商品</div><div class="price">価格は画像の中</div>'
+                '</div></a></li></ul></body></html>')
+        self.assertEqual(P.parse_cocos_fair_page(html)[0]["items"], [])
+        with self.assertRaises(ValueError):
+            P.parse_cocos_fair_page("<html>構造が変わった</html>")
+
+    def test_description_is_never_read(self):
+        html = S.cocos_fair_page().replace("</body>", '<p class="subTxt">北海道産小麦100%の説明文</p></body>')
+        self.assertNotIn("説明文", str(P.parse_cocos_fair_page(html)))
+
+    def test_ids_are_stable_across_runs(self):
+        a = P.parse_cocos_fair_page(S.cocos_fair_page())[0]["items"][0]["pid"]
+        b = P.parse_cocos_fair_page(S.cocos_fair_page())[0]["items"][0]["pid"]
+        self.assertEqual(a, b)
+
+
+class TestCocosNews(unittest.TestCase):
+    def test_entries(self):
+        news = P.parse_cocos_news(S.cocos_news([
+            ("/news/2026/menu/1105-122026.html", "2026-11-05",
+             "【11月19日(木)開始】ココスの期間限定スイーツ！「勤労感謝の芋栗かぼちゃクレープ」"),
+            ("/news/2026/menu/1006-115296.html", "2026-10-06", "【10月13日(火)開始】ココスが「マロンフェア」を開催！")]))
+        self.assertEqual(news[0]["date"], "2026-11-05")
+        self.assertEqual(news[0]["url"], "https://www.cocos-jpn.co.jp/news/2026/menu/1105-122026.html")
+        self.assertIn("11月19日", news[0]["title"])
+        self.assertEqual(news[0]["text"], "")  # 一覧にリード文は無い
+        self.assertEqual(P.launch_date_from_text(news[0]["title"], __import__("datetime").date(2026, 11, 5)), "2026-11-19")
+
+    def test_garbage_is_empty(self):
+        self.assertEqual(P.parse_cocos_news("<html>変わった</html>"), [])
+
+
 if __name__ == "__main__":
     unittest.main()
