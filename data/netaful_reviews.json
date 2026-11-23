@@ -1,5 +1,111 @@
 {
  "articles": {
+  "cocos": [
+   {
+    "date": "2025-12-07T17:30:00",
+    "id": 186580,
+    "link": "https://netaful.jp/family-restaurant/0186580.html",
+    "product_name": "ココスのハンバーグボロネーゼ",
+    "thumb": {
+     "height": 364,
+     "url": "https://netaful.jp/wp-content/uploads/2025/12/cocos-humburg-bolo-002-485x364.jpeg",
+     "width": 485
+    },
+    "title": "【ココス】「ココスのハンバーグボロネーゼ」肉の存在感が段違いの満足コンボ！"
+   },
+   {
+    "date": "2023-10-02T11:30:00",
+    "id": 138318,
+    "link": "https://netaful.jp/neta-eat/0138318.html",
+    "product_name": "宿儺の指",
+    "thumb": {
+     "height": 546,
+     "url": "https://netaful.jp/wp-content/uploads/2023/10/cocos-jujutsu-000-485x546.jpg",
+     "width": 485
+    },
+    "title": "【ココス】呪術廻戦コラボで「宿儺の指」が食べられる！？紫色した呪いの鍋料理「呪いの王！宿儺の特級呪物鍋」など限定メニューを発売（10/11から）"
+   },
+   {
+    "date": "2022-12-01T20:00:00",
+    "id": 123078,
+    "link": "https://netaful.jp/family-restaurant/0123078.html",
+    "product_name": "トリプルハンバーグ",
+    "thumb": {
+     "height": 169,
+     "url": "https://netaful.jp/wp-content/uploads/2022/12/cocos-triple-burger-01000-300x169.jpg",
+     "width": 300
+    },
+    "title": "ココスの気合いを感じるハンバーグ3階建て7層構造の「トリプルハンバーグ」食べた感想"
+   },
+   {
+    "date": "2022-11-29T08:00:00",
+    "id": 122903,
+    "link": "https://netaful.jp/neta-eat/0122903.html",
+    "product_name": "トリプルハンバーグ",
+    "thumb": {
+     "height": 294,
+     "url": "https://netaful.jp/wp-content/uploads/2022/11/cocos-humburg-28000-300x294.jpg",
+     "width": 300
+    },
+    "title": "【ココス】330gのハンバーグでオニオン・トマト・ベーコンを挟んでチェダーチーズをのせた7層ハンバーグ「トリプルハンバーグ」期間限定で発売（12/1）"
+   },
+   {
+    "date": "2020-04-01T14:00:00",
+    "id": 62600,
+    "link": "https://netaful.jp/neta-eat/062600.html",
+    "product_name": null,
+    "thumb": {
+     "height": 262,
+     "url": "https://netaful.jp/wp-content/uploads/2020/04/slproImg_202004011712150-1-300x262.jpg",
+     "width": 300
+    },
+    "title": "【ココス】全商品対象！期間限定テイクアウト20%オフキャンペーン実施中"
+   },
+   {
+    "date": "2019-04-18T14:00:00",
+    "id": 60401,
+    "link": "https://netaful.jp/smartphone-pay/060401.html",
+    "product_name": "すき家",
+    "thumb": {
+     "height": 189,
+     "url": "https://netaful.jp/wp-content/uploads/2019/04/slproImg_201904181422590-1.jpg",
+     "width": 300
+    },
+    "title": "「すき家」「はま寿司」「ココス」などゼンショーグループが「楽天スーパーポイント」「Pontaポイント」「dポイント」を導入"
+   },
+   {
+    "date": "2014-06-21T23:00:00",
+    "id": 47296,
+    "link": "https://netaful.jp/family-restaurant/047296.html",
+    "product_name": "ブラジリアンバーベキュー",
+    "thumb": {
+     "height": 225,
+     "url": "https://netaful.jp/wp-content/uploads/2014/06/cocos-9892-1-300x225.jpg",
+     "width": 300
+    },
+    "title": "祝ブラジルW杯！ソーセージ！肉！豆！ココスで「ブラジリアンバーベキュー」と「フェイジョアーダ」を食べてきた！"
+   },
+   {
+    "date": "2014-06-10T16:00:00",
+    "id": 47143,
+    "link": "https://netaful.jp/family-restaurant/047143.html",
+    "product_name": "ココッシュ",
+    "thumb": {
+     "height": 225,
+     "url": "https://netaful.jp/wp-content/uploads/2014/06/cocos-9683-1-300x225.jpg",
+     "width": 300
+    },
+    "title": "「ココッシュ」ココス版シロノワールを食べてみた！"
+   },
+   {
+    "date": "2008-04-22T07:23:25",
+    "id": 25552,
+    "link": "https://netaful.jp/eat/025552.html",
+    "product_name": "ばくだんおにぎり",
+    "thumb": null,
+    "title": "世界の山ちゃん「ばくだんおにぎり」がココストアに登場"
+   }
+  ],
   "dennys": [
    {
     "date": "2024-03-24T09:30:00",
@@ -206,6 +312,6 @@
   ]
  },
  "errors": [],
- "fetched_at": "2026-11-23T16:10:52+09:00",
+ "fetched_at": "2026-11-23T19:05:39+09:00",
  "matches": {}
 }
