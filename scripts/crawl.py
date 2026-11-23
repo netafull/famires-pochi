@@ -1106,7 +1106,10 @@ JOYFULL_STORES_NOTE = "関東エリア店舗(東京都・埼玉県・千葉県�
 def crawl_joyfull(getter, pending: dict, stats: dict, today: str | None = None) -> None:
     """ジョイフル: 「季節・期間限定」の一覧(/menu?category=19)から商品名・価格(全角￥の税抜＋税込併記)を、
     商品ページ(/menu/<数値ID>)のパンくずからフェア名を取る。識別キーは商品ページの数値ID。
-    一覧の枠が無い・0件の回、表示件数(該当件数)より取れた商品が少ない回、どれかの商品ページが
+    商品ページは、まだ記録していない商品と、フェア名が保存されていない既存商品だけ取る
+    (記録済みでフェア名のある商品は保存済みのフェア名を使う。フェア名はほぼ変わらないので、
+    毎日の取得を減らし、件数が増えたときに上限へ当たって不完全扱いになる詰まりも防ぐ)。
+    一覧の枠が無い・0件の回、表示件数(該当件数)より取れた商品が少ない回、取るべき商品ページが
     取れない・パンくずが読めない回は「一覧が不完全(構造変更の疑い)」として終了判定をしない。
     開始日は、まず商品名の先頭の告知「【YYYY年M月D日(曜)H時より販売】」(年まで含む一次情報)、
     次にお知らせ(メニュー分類)の見出しを商品名・フェア名で照合できたときだけ使う。取れなければ記録開始日。"""
@@ -1136,19 +1139,25 @@ def crawl_joyfull(getter, pending: dict, stats: dict, today: str | None = None) 
             complete = False
         for it in page["items"]:
             url = JOYFULL_BASE + it["link"]
-            if not robots.allowed(JOYFULL_BASE, it["link"]):
-                complete = False
-                continue
-            try:
-                detail = getter(chain, url)
-                st["detail_requests"] += 1
-                fair = parsers.parse_joyfull_detail(detail)["fair"]
-            except BlockedError:
-                raise
-            except Exception as e:  # noqa: BLE001  取得失敗・構造変更
-                print(f"[warn] joyfull 商品 {it['link']}: {e}", file=sys.stderr)
-                complete = False
-                continue
+            saved = load_product(chain, it["pid"])
+            if saved is not None and saved.get("fair"):
+                # 記録済みでフェア名も保存されている商品は、商品ページを取り直さない
+                # (モルのレビュー指摘、2026-11-23)
+                fair = saved["fair"]
+            else:
+                if not robots.allowed(JOYFULL_BASE, it["link"]):
+                    complete = False
+                    continue
+                try:
+                    detail = getter(chain, url)
+                    st["detail_requests"] += 1
+                    fair = parsers.parse_joyfull_detail(detail)["fair"]
+                except BlockedError:
+                    raise
+                except Exception as e:  # noqa: BLE001  取得失敗・構造変更
+                    print(f"[warn] joyfull 商品 {it['link']}: {e}", file=sys.stderr)
+                    complete = False
+                    continue
             entries[it["pid"]] = {
                 "pid": it["pid"], "name": it["name"], "price": it["price"], "price_max": None,
                 "price_excl_tax": it["price_excl_tax"], "fair": fair,

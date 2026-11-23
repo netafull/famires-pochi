@@ -541,8 +541,9 @@ def parse_joyfull_category(html: str) -> dict:
     """「季節・期間限定」の一覧(/menu?category=19)から
     {title, declared_count, items:[{pid, name, price, price_excl_tax, listed_launch, link}]}。
     商品は ul.menu-grid の li.mg-item のカード(a.menu-card)で、識別キーは商品ページのパス(/menu/<数値ID>)。
-    価格(全角￥の税抜＋税込併記)はカードの中(p.menu-meta)にある。名前は公式の表示どおり
-    (販売開始の告知「【…より販売】」の接頭辞も含む。開始日は listed_launch に別途入れる)。
+    価格(全角￥の税抜＋税込併記)はカードの中(p.menu-meta)にある。名前に販売開始の告知
+    「【…より販売】」の接頭辞が付いていたら、開始日は listed_launch に別途入れ、名前からは接頭辞を落とす
+    (表示と名前での照合は接頭辞なしで行う。モルのレビュー指摘、2026-11-23)。
     一覧の枠(見出し・ul.menu-grid)が無ければ ValueError(構造変更の疑い)。
     価格の取れないカードは items に入れない(呼び出し側が declared_count との差で「不完全」とする)。"""
     h = _strip_comments(html)
@@ -566,8 +567,11 @@ def parse_joyfull_category(html: str) -> dict:
         if pid in seen:
             continue
         seen.add(pid)
+        listed_launch = parse_joyfull_listed_launch(name)
+        if listed_launch:
+            name = _JOYFULL_LISTED_LAUNCH_RE.sub("", name).strip()
         items.append({"pid": pid, "name": name, "price_excl_tax": pp[0], "price": pp[1],
-                      "listed_launch": parse_joyfull_listed_launch(name),
+                      "listed_launch": listed_launch,
                       "link": f"/menu/{pid}"})
     return {"title": JOYFULL_CATEGORY_NAME,
             "declared_count": int(cnt.group(1)) if cnt else None,
