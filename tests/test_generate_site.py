@@ -228,7 +228,7 @@ class TestAdsAndAnalytics(unittest.TestCase):
         self.assertIn("ca-pub-2195959398357532", h)
         self.assertIn('data-ad-slot="1215675017"', h)
         self.assertIn("G-D8F2T2XB5W", h)
-        self.assertIn("当サイトは広告（Google AdSense）を掲載し、アクセス解析（Googleアナリティクス）を使っています。", h)
+        self.assertIn("当サイトはGoogle AdSenseを掲載し、Googleアナリティクスを使っています。いずれもCookieを使うことがあります。", h)
 
     def test_disclosure_follows_actual_settings(self):
         with mock.patch.dict(G.CONFIG, {"ga_measurement_id": ""}):
@@ -238,7 +238,7 @@ class TestAdsAndAnalytics(unittest.TestCase):
         with mock.patch.dict(G.CONFIG, {"adsense_client_id": "", "adsense_ad_slot": "", "ga_measurement_id": ""}):
             h = G.render_item_page(item())
             self.assertNotIn("adsbygoogle", h)
-            self.assertNotIn("広告（Google AdSense）", h)
+            self.assertNotIn("Google AdSenseを掲載し", h)
 
     def test_footer_links(self):
         h = G.render_top([item()])
