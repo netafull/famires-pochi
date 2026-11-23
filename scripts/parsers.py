@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココスの公式ページのパーサ。
+"""デニーズ・ジョナサン・ココス・ビッグボーイの公式ページのパーサ。
 
 ネットワークには触らない純粋関数だけを置く(合成フィクスチャでテストする)。
 公式のHTML/JSONの構造が変わったら、まずここが壊れる。壊れ方は2通りに分ける:
@@ -394,3 +394,110 @@ def parse_cocos_news(html: str) -> list[dict]:
         out.append({"date": m.group(2), "title": clean_text(m.group(3)), "text": "",
                     "url": COCOS_BASE + m.group(1)})
     return out
+
+# ---------------------------------------------------------------------------
+# ビッグボーイ (www.bigboyjapan.co.jp)
+# ---------------------------------------------------------------------------
+
+BIGBOY_BASE = "https://www.bigboyjapan.co.jp"
+BIGBOY_MENU_PATH = "/menu/grand/"
+BIGBOY_FAIR_PATH = "/fair/"
+BIGBOY_SECTION_TITLE = "期間限定メニュー"
+
+_PRICE_YEN_PAIR_BB_RE = re.compile(r"(?:¥|￥)\s*([\d,]+)\s*[（(]\s*税込\s*(?:¥|￥)\s*([\d,]+)\s*[）)]")
+
+
+def parse_bigboy_price_pair(text: str | None) -> tuple[int, int] | None:
+    """「¥1,490（税込¥1,639）」→ (税抜, 税込)。ビッグボーイの ¥ 表記専用(共通の parse_price_pair は円表記用)。
+    公式HTMLでは ¥ と数字が別タグ(<span class="yen">¥</span>1,490)に分かれているので、タグを除いてから読む。
+    見つからなければ None。"""
+    t = unicodedata.normalize("NFKC", clean_text(text))
+    m = _PRICE_YEN_PAIR_BB_RE.search(t)
+    if not m:
+        return None
+    return int(m.group(1).replace(",", "")), int(m.group(2).replace(",", ""))
+
+
+def parse_bigboy_grand_menu(html: str) -> dict:
+    """グランドメニュー(/menu/grand/)の「期間限定メニュー」欄から {title, items:[{pid, name, price,
+    price_max, price_excl_tax, price_variants}]}。他の欄(大俵ハンバーグ等の定番)は読まない。
+    商品は欄の中の <li class="box"> で、名前は <h4 class="name"> の <span class="main">
+    (付け合わせの注記 <span class="sub"> は名前に含めない)。価格は <p class="price"> で、
+    サイズ別に複数ある商品は price=先頭サイズの税込・price_max=最大の税込・price_variants に
+    [{label, price}] の内訳を入れる(サイズが1つなら price_max は None、price_variants は空)。
+    識別キーは、商品ごとのページが無いので「grand」＋正規化した商品名のハッシュ。
+    欄そのものが無ければ ValueError(構造変更の疑い)。価格が取れた商品が0件なら items は空
+    (呼び出し側が「不完全」とする)。"""
+    h = _strip_comments(html)
+    body = None
+    for m in re.finditer(r"<section\b[^>]*>(.*?)</section>", h, re.S):
+        t = re.search(r'<h3[^>]*class="[^"]*tab_title[^"]*"[^>]*>(.*?)</h3>', m.group(1), re.S)
+        if t and clean_text(t.group(1)) == BIGBOY_SECTION_TITLE:
+            body = m.group(1)
+            break
+    if body is None:
+        raise ValueError("ビッグボーイ: グランドメニューに「期間限定メニュー」欄(tab_title)が見つからない")
+    items, seen = [], set()
+    for chunk in re.split(r'<li[^>]*class="[^"]*box[^"]*"[^>]*>', body)[1:]:
+        nm = re.search(r'<h4[^>]*class="[^"]*name[^"]*"[^>]*>(.*?)</h4>', chunk, re.S)
+        if not nm:
+            continue
+        main = re.search(r'<span[^>]*class="[^"]*main[^"]*"[^>]*>(.*?)</span>', nm.group(1), re.S)
+        name = clean_text(main.group(1)) if main else ""
+        if not name:
+            continue
+        variants = []
+        for pr in re.finditer(r'<p[^>]*class="[^"]*price[^"]*"[^>]*>(.*?)</p>', chunk, re.S):
+            pp = parse_bigboy_price_pair(pr.group(1))
+            if not pp:
+                continue
+            sz = re.search(r'<span[^>]*class="[^"]*size[^"]*"[^>]*>(.*?)</span>', pr.group(1), re.S)
+            variants.append({"label": clean_text(sz.group(1)) if sz else "",
+                             "price_excl_tax": pp[0], "price": pp[1]})
+        if not variants:
+            continue
+        pid = stable_id("grand", name)
+        if pid in seen:
+            continue
+        seen.add(pid)
+        items.append({"pid": pid, "name": name,
+                      "price_excl_tax": variants[0]["price_excl_tax"],
+                      "price": variants[0]["price"],
+                      "price_max": max(v["price"] for v in variants) if len(variants) > 1 else None,
+                      "price_variants": ([{"label": v["label"], "price": v["price"]} for v in variants]
+                                         if len(variants) > 1 else [])})
+    return {"title": BIGBOY_SECTION_TITLE, "items": items}
+
+
+def parse_bigboy_fair_links(html: str) -> list[dict]:
+    """フェア情報(/fair/)の一覧から [{path, title}]。各記事は <li class="post"> で、見出しは
+    <p class="item">、詳細へのリンクは /news/fair/<id>.html。構造が違えば空のリスト
+    (開始日なしで続行する。デニーズのニュースと同じ扱い)。"""
+    h = _strip_comments(html)
+    out, seen = [], set()
+    for m in re.finditer(r'<li[^>]*class="[^"]*post[^"]*"[^>]*>(.*?)</li>', h, re.S):
+        a = re.search(r'href="(/news/[^"#?]+\.html)"', m.group(1))
+        if not a or a.group(1) in seen:
+            continue
+        seen.add(a.group(1))
+        t = re.search(r'<p[^>]*class="[^"]*\bitem\b[^"]*"[^>]*>(.*?)</p>', m.group(1), re.S)
+        out.append({"path": a.group(1), "title": clean_text(t.group(1)) if t else ""})
+    return out
+
+
+def parse_bigboy_news_article(html: str, url: str) -> dict | None:
+    """ニュース記事(/news/fair/<id>.html 等)から {date, title, text, url}。
+    date は <p class="date">2026/10/14</p>(掲載日)、title は <p class="item">(見出し)、
+    text は本文(<p class="item_detail">以下)を平文にしたもの(保存はしない。開始日の照合だけに使う)。
+    掲載日か見出しが取れなければ None(その記事は照合に使わない)。"""
+    h = _strip_comments(html)
+    d = re.search(r'<p[^>]*class="[^"]*date[^"]*"[^>]*>\s*(\d{4})/(\d{1,2})/(\d{1,2})\s*</p>', h)
+    t = re.search(r'<p[^>]*class="[^"]*\bitem\b[^"]*"[^>]*>(.*?)</p>', h, re.S)
+    if not d or not t:
+        return None
+    body = ""
+    b = re.search(r'<p[^>]*class="[^"]*item_detail[^"]*"[^>]*>(.*?)</li>', h, re.S)
+    if b:
+        body = strip_html(b.group(1))
+    return {"date": f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}",
+            "title": clean_text(t.group(1)), "text": body, "url": url}

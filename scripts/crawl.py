@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココスの期間限定フェアメニューを巡回し、
-data/products/{dennys|jonathan|cocos}/{id}.json に1商品1ファイルで蓄積する。
+"""デニーズ・ジョナサン・ココス・ビッグボーイの期間限定フェアメニューを巡回し、
+data/products/{dennys|jonathan|cocos|bigboy}/{id}.json に1商品1ファイルで蓄積する。
 
 このサイトの核は「販売状況の追跡」。公式サイトはフェアが終わると商品を消すので、
 一覧に居た商品が消えたら終了とみなして記録を残す(カフェポチ・ファストフードポチと同じ設計)。
@@ -851,6 +851,124 @@ def crawl_jonathan(getter, pending: dict, stats: dict, today: str | None = None)
 
     run.finish(entries, complete, build, refresh)
 
+
+# ---------------------------------------------------------------------------
+# ビッグボーイ
+# ---------------------------------------------------------------------------
+
+BIGBOY_BASE = parsers.BIGBOY_BASE
+BIGBOY_STORES_NOTE = "一部店舗では販売内容や価格が異なります"
+
+
+def crawl_bigboy(getter, pending: dict, stats: dict, today: str | None = None) -> None:
+    """ビッグボーイ: グランドメニュー(/menu/grand/)の「期間限定メニュー」欄から商品名・価格(¥表記)を取る。
+    商品ごとのページは無いので、出典はグランドメニューのページ自体。フェアごとの区別は公式メニューに
+    無いため、フェア名は欄の名前(期間限定メニュー)で統一する。欄が無い・価格が1件も取れない回は
+    「一覧が不完全(構造変更の疑い)」として終了判定をしない。
+    開始日はフェア情報(/fair/)から辿れるニュース記事(掲載日つき)の見出し・本文を、商品名で
+    照合できたときだけ使う(年は記事の掲載日から補う。find_launch が持つ)。フェア記事は商品名を
+    列挙しないことが多いので、取れない商品は記録開始日になる。"""
+    chain = "bigboy"
+    run = Run(chain, pending, stats, today)
+    st, today, now = run.st, run.today, run.now
+    robots = Robots(getter, chain, st)
+    complete = True
+    entries: dict[str, dict] = {}
+    try:
+        if not robots.allowed(BIGBOY_BASE, parsers.BIGBOY_MENU_PATH):
+            print("[skip] bigboy: robots.txtでDisallow", file=sys.stderr)
+            return
+        html = getter(chain, BIGBOY_BASE + parsers.BIGBOY_MENU_PATH)
+        st["list_requests"] += 1
+        try:
+            page = parsers.parse_bigboy_grand_menu(html)
+        except ValueError as e:
+            print(f"[warn] bigboy {e}", file=sys.stderr)
+            return
+        if not page["items"]:
+            print("[warn] bigboy: 期間限定メニューから価格が1件も取れない(構造変更の疑い。この回は終了判定をしない)",
+                  file=sys.stderr)
+            return
+        for it in page["items"]:
+            if it["pid"] in entries:
+                continue
+            entries[it["pid"]] = {
+                "pid": it["pid"], "name": it["name"], "price": it["price"], "price_max": it["price_max"],
+                "price_excl_tax": it["price_excl_tax"], "price_variants": it["price_variants"],
+                "fair": page["title"], "official_url": BIGBOY_BASE + parsers.BIGBOY_MENU_PATH,
+            }
+    except BlockedError as e:
+        run.block("list", e)
+        return
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] bigboy 一覧取得失敗: {e}", file=sys.stderr)
+        return
+
+    all_names = [e["name"] for e in entries.values()]
+    max_articles = int(CONFIG.get("bigboy_news_max_articles", 8))
+
+    def news_loader():
+        if not robots.allowed(BIGBOY_BASE, parsers.BIGBOY_FAIR_PATH):
+            return []
+        links = parsers.parse_bigboy_fair_links(getter(chain, BIGBOY_BASE + parsers.BIGBOY_FAIR_PATH))
+        st["detail_requests"] += 1
+        out = []
+        for link in links[:max_articles]:
+            url = BIGBOY_BASE + link["path"]
+            try:
+                art_html = getter(chain, url)
+                st["detail_requests"] += 1
+            except BlockedError:
+                raise
+            except Exception as e:  # noqa: BLE001  記事1本の失敗は開始日なしで続行
+                print(f"[warn] bigboy ニュース {link['path']}: {e}", file=sys.stderr)
+                continue
+            art = parsers.parse_bigboy_news_article(art_html, url)
+            if art:
+                out.append(art)
+        return out
+
+    news = PressSources(news_loader)
+
+    def build(e):
+        p = base_product(chain, e["pid"], e["name"], now, today)
+        p["fair"] = e["fair"]
+        p["limited_kind"] = "フェア"
+        p["price_excl_tax"] = e["price_excl_tax"]
+        p["price_note"] = "税込。税抜は公式サイトの表示"
+        p["price_variants"] = e["price_variants"] or None
+        set_initial_price(p, e["price"], e["price_max"], today)
+        p["official_url"] = e["official_url"]
+        p["stores_note"] = BIGBOY_STORES_NOTE
+        p["source_list"] = ["www.bigboyjapan.co.jp" + parsers.BIGBOY_MENU_PATH]
+        return p
+
+    def refresh(p, e):
+        p["fair"] = e["fair"]
+        p["price_excl_tax"] = e["price_excl_tax"]
+        p["price_variants"] = e["price_variants"] or None
+
+    def enrich(p, e, is_new):
+        if not (needs_launch(p) and (is_new or int(p.get("launch_search_runs") or 0) < LAUNCH_SEARCH_RUNS_MAX)):
+            return
+        hit = find_launch(p["name"], news.get(), launch_ref(p), all_names)
+        base = re.split(r"[～〜~]", p["name"])[0]  # デニーズと同じく、副題(～以降)を落とした名前でも照合する
+        if hit is None and base != p["name"]:
+            hit = find_launch(base, news.get(), launch_ref(p), all_names)
+        if hit is None and p.get("fair"):
+            hit = find_launch(p["fair"], news.get(), launch_ref(p), [])
+            if hit:
+                hit["via"] = "fair"  # 商品名でなくフェア名での照合(本文由来と同じく「ずれることがある」扱い)
+        if hit:
+            apply_launch(p, hit, "official_news")
+            if hit.get("via") == "fair":
+                p["launch_date_source"] = "official_news_fair"
+        else:
+            p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
+
+    run.finish(entries, complete, build, refresh, enrich)
+
+
 # ---------------------------------------------------------------------------
 # ココス
 # ---------------------------------------------------------------------------
@@ -1052,7 +1170,7 @@ def save_run_summary(stats: dict[str, dict], streaks: dict[str, int] | None = No
     RUN_SUMMARY.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
 
-CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos}
+CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos, "bigboy": crawl_bigboy}
 
 
 def main(argv: list[str] | None = None) -> int:

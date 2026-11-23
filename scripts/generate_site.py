@@ -39,7 +39,7 @@ CHAIN_NAME = {c["slug"]: c["name"] for c in CHAINS}
 CHAIN_OFFICIAL = CONFIG.get("chain_official") or {}
 # 出典の表記(出典：○○公式サイト)
 CHAIN_SOURCE = {slug: v.get("source") or CHAIN_NAME.get(slug, slug) + "公式サイト" for slug, v in CHAIN_OFFICIAL.items()}
-# 全チェーン名の並び(ページの説明文用): 「デニーズ・ジョナサン」
+# 全チェーン名の並び(ページの説明文用): 「デニーズ・ジョナサン・ビッグボーイ」
 CHAIN_LIST_TEXT = "・".join(c["name"] for c in CHAINS)
 # 「終了日」の注意書き。公式発表の最終販売日ではなく、一覧から消えたことの観測日
 ENDED_NOTE = "公式サイトの一覧から消えたことを確認した日"
