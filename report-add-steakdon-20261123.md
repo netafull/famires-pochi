@@ -19,7 +19,7 @@
 - `scripts/crawl.py`: `crawl_steakdon` を追加し `CRAWLERS` に登録。流れはデニーズ方式（一覧→PressSources で遅延取得したニュース見出しと商品名を照合）。フェア名での照合はしない（商品ごとのフェア名が一覧に無いため）。docstring のチェーン名も更新。
 - `config.json`: chains（slug `steakdon`、色は下記）、chain_official、間隔3秒、上限10、歯止め15、netaful_tags=null＋検索語「ステーキのどん」＋title_filters＋title_always、文言（top_title・site_tagline・site_description・about の開始日説明）。
 - `scripts/notify.py`: CHAIN_LABEL に steakdon。
-- 文言の追随: `fetch_netaful_reviews.py` の docstring、AGENTS.md（対象説明と上限の数字）、README（冒頭・規約の確認状況・ステーキのどんの節・しきい値の表・実測・サイト構成・既知の限界）、`.github/workflows/update.yml` の上限合計コメント（30→40）。
+- 文言の追随: `fetch_netaful_reviews.py` の docstring、AGENTS.md（対象説明と上限の数字）、README（冒頭・規約の確認状況・ステーキのどんの節・しきい値の表・実測・サイト構成・既知の限界）、`.github/workflows/update.yml` の上限合計コメント（main取り込み後は95。第9節参照）。
 - テスト: `tests/synth.py` に実物の構造を再現した fixture（サイズ別価格・コメント内商品を含む）、`tests/test_parsers.py` に TestSteakdonFairList／TestSteakdonNews、`tests/test_crawl.py` に TestSteakdonCrawl と TestConfig・CRAWLERS の期待値更新、`tests/test_generate_site.py` にタイトル期待値・商品ページ・色の確認を追加。
 - `docs/` の再生成と `data/` の初回記録は PR に含めない（手順書第5章。初回記録は本番の定期実行に任せる）。
 
@@ -69,3 +69,10 @@
 - update.yml の上限合計コメントは 85+10=95 に更新。TestConfig・タイトル・CSS変数・CRAWLERS の期待値も6チェーンに合わせた。
 - テストは全190件通過（main の168件＋ステーキのどんの22件）。
 - ポチフルとローテーターのファミレス文言はチェーン名なしに統一済みのため、本PRでの文言変更は不要。新発売ポチへの供給は自動（開始日が無い商品は出ない）。
+
+## 10. レビュー対応（2026-11-23、モルの指摘1点）
+
+- 一覧で名前・価格が読めない商品がある回を「不完全」にする。従来は parse_steakdon_fair_list が読めない商品を黙って飛ばし、crawl_steakdon は常に complete=True で終了判定していたため、公式が1商品だけ価格表記を変えると、販売中でも2日後に「終了」と記録されるおそれがあった。
+- 対応：パーサが「リンクはあったが名前・価格が読めなかった件数」を skipped として返し、1件以上なら run.finish の complete を False にする（ジョイフルの突き合わせ、ココスの「フェアが0件」と同じ考え方）。
+- テストを2本追加（パーサの skipped 件数、価格の読めない商品が混じる回では既存商品が終了にならないこと）。全192件通過。
+- あわせて第2節の「上限合計コメント（30→40）」の記述を、main取り込み後の実数（95）に合わせて直した。
