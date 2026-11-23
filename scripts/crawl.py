@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサンの期間限定フェアメニューを巡回し、
-data/products/{dennys|jonathan}/{id}.json に1商品1ファイルで蓄積する。
+"""デニーズ・ジョナサン・ココスの期間限定フェアメニューを巡回し、
+data/products/{dennys|jonathan|cocos}/{id}.json に1商品1ファイルで蓄積する。
 
 このサイトの核は「販売状況の追跡」。公式サイトはフェアが終わると商品を消すので、
 一覧に居た商品が消えたら終了とみなして記録を残す(カフェポチ・ファストフードポチと同じ設計)。
@@ -852,6 +852,136 @@ def crawl_jonathan(getter, pending: dict, stats: dict, today: str | None = None)
     run.finish(entries, complete, build, refresh)
 
 # ---------------------------------------------------------------------------
+# ココス
+# ---------------------------------------------------------------------------
+
+COCOS_BASE = parsers.COCOS_BASE
+COCOS_STORES_NOTE = "一部の店舗で取扱商品、販売時間帯、価格が異なる場合があります"
+
+
+class CocosRobots(Robots):
+    """ココスは存在しないパス(robots.txt を含む)に 403 でエラーページを返すサーバー仕様で、
+    robots.txt の取得が BlockedError になる(2026-11-23 確認)。RFC 9309 では 4xx(429を除く)は
+    「robots.txt が無い」扱いでよいので、その場合だけ制限なしとして扱う。429・チャレンジ・
+    それ以外の BlockedError はそのまま止める。実際のページ取得でブロックされた場合は
+    そちらの BlockedError で止まる(共通の Robots は触らない)。"""
+
+    def allowed(self, base: str, path: str) -> bool:
+        try:
+            return super().allowed(base, path)
+        except BlockedError as e:
+            m = re.match(r"HTTP (\d{3})", str(e))
+            code = int(m.group(1)) if m else None
+            if code is None or not 400 <= code < 500 or code == 429:
+                raise
+            self.st["list_requests"] += 1  # 403 でもリクエストは発生している
+            rp = urllib.robotparser.RobotFileParser()
+            rp.parse(["User-agent: *", "Allow: /"])
+            self.parsers[base] = rp
+            return True
+
+
+def crawl_cocos(getter, pending: dict, stats: dict, today: str | None = None) -> None:
+    """ココス: フェアページ(/menu/fair/)の「h2(フェア名)+メニュー一覧」から商品名・価格(¥表記)を取る。
+    フェアの組が無い・どれかのフェアが0件・価格が1件も取れない回は「一覧が不完全(構造変更の疑い)」として
+    終了判定をしない。開始日は /news/<年>/menu/ の見出しの「【11月19日(木)開始】」を、商品名またはフェア名で
+    照合できたときだけ使う。取れなければ記録開始日。ニュースは当年分だけなので、年をまたぐと前年の
+    フェアの開始日は拾えない(デニーズと同じ限界)。"""
+    chain = "cocos"
+    run = Run(chain, pending, stats, today)
+    st, today, now = run.st, run.today, run.now
+    robots = CocosRobots(getter, chain, st)
+    exclude_words = [w for w in (CONFIG.get("cocos_exclude_words") or []) if w]
+    complete = True
+    entries: dict[str, dict] = {}
+    try:
+        if not robots.allowed(COCOS_BASE, parsers.COCOS_FAIR_PATH):
+            print("[skip] cocos: robots.txtでDisallow", file=sys.stderr)
+            return
+        html = getter(chain, COCOS_BASE + parsers.COCOS_FAIR_PATH)
+        st["list_requests"] += 1
+        try:
+            sections = parsers.parse_cocos_fair_page(html)
+        except ValueError as e:
+            print(f"[warn] cocos {e}", file=sys.stderr)
+            return
+        for sec in sections:
+            if not sec["items"]:
+                print(f"[warn] cocos フェア「{sec['title']}」: 価格が1件も取れない(構造変更の疑い)", file=sys.stderr)
+                complete = False
+                continue
+            for it in sec["items"]:
+                if any(w in it["name"] for w in exclude_words):
+                    continue  # 「追加〜」等のトッピングは単品の商品ではないので記録しない
+                if it["pid"] in entries:
+                    continue
+                entries[it["pid"]] = {
+                    "pid": it["pid"], "name": it["name"], "price": it["price"], "price_max": None,
+                    "price_excl_tax": it["price_excl_tax"], "fair": sec["title"],
+                    "official_url": COCOS_BASE + (it["link"] or parsers.COCOS_FAIR_PATH),
+                }
+        if not entries:
+            print("[warn] cocos: 商品が0件(構造変更の疑い。この回は終了判定をしない)", file=sys.stderr)
+            return
+    except BlockedError as e:
+        run.block("list", e)
+        return
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] cocos 一覧取得失敗: {e}", file=sys.stderr)
+        return
+
+    all_names = [e["name"] for e in entries.values()]
+    news_path = f"/news/{today[:4]}/menu/"
+
+    def news_loader():
+        if not robots.allowed(COCOS_BASE, news_path):
+            return []
+        got = parsers.parse_cocos_news(getter(chain, COCOS_BASE + news_path))
+        st["detail_requests"] += 1
+        return [{"title": n["title"], "text": n["text"], "date": n["date"], "url": n["url"]} for n in got]
+
+    news = PressSources(news_loader)
+
+    def build(e):
+        p = base_product(chain, e["pid"], e["name"], now, today)
+        p["fair"] = e["fair"]
+        p["limited_kind"] = "フェア"
+        p["price_excl_tax"] = e["price_excl_tax"]
+        p["price_note"] = "税込。税抜は公式サイトの表示"
+        set_initial_price(p, e["price"], None, today)
+        p["official_url"] = e["official_url"]
+        p["stores_note"] = COCOS_STORES_NOTE
+        p["source_list"] = ["www.cocos-jpn.co.jp" + parsers.COCOS_FAIR_PATH]
+        return p
+
+    def refresh(p, e):
+        p["fair"] = e["fair"]
+        p["price_excl_tax"] = e["price_excl_tax"]
+        if e["official_url"] != p.get("official_url"):
+            p["official_url"] = e["official_url"]
+
+    def enrich(p, e, is_new):
+        if not (needs_launch(p) and (is_new or int(p.get("launch_search_runs") or 0) < LAUNCH_SEARCH_RUNS_MAX)):
+            return
+        hit = find_launch(p["name"], news.get(), launch_ref(p), all_names)
+        base = re.split(r"[～〜~]", p["name"])[0]  # デニーズと同じく、副題(～以降)を落とした名前でも照合する
+        if hit is None and base != p["name"]:
+            hit = find_launch(base, news.get(), launch_ref(p), all_names)
+        if hit is None and p.get("fair"):
+            hit = find_launch(p["fair"], news.get(), launch_ref(p), [])
+            if hit:
+                hit["via"] = "fair"  # 商品名でなくフェア名での照合(本文由来と同じく「ずれることがある」扱い)
+        if hit:
+            apply_launch(p, hit, "official_news")
+            if hit.get("via") == "fair":
+                p["launch_date_source"] = "official_news_fair"
+        else:
+            p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
+
+    run.finish(entries, complete, build, refresh, enrich)
+
+
+# ---------------------------------------------------------------------------
 # 実行
 # ---------------------------------------------------------------------------
 
@@ -922,7 +1052,7 @@ def save_run_summary(stats: dict[str, dict], streaks: dict[str, int] | None = No
     RUN_SUMMARY.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
 
-CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan}
+CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos}
 
 
 def main(argv: list[str] | None = None) -> int:

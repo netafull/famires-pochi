@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサンの公式ページのパーサ。
+"""デニーズ・ジョナサン・ココスの公式ページのパーサ。
 
 ネットワークには触らない純粋関数だけを置く(合成フィクスチャでテストする)。
 公式のHTML/JSONの構造が変わったら、まずここが壊れる。壊れ方は2通りに分ける:
@@ -317,3 +317,80 @@ def parse_jonathan_fair_page(html: str, page_slug: str) -> dict:
             seen.add(pid)
             items.append({"pid": pid, **it})
     return {"title": clean_text(t.group(1)), "items": items}
+
+
+# ---------------------------------------------------------------------------
+# ココス (www.cocos-jpn.co.jp)
+# ---------------------------------------------------------------------------
+
+COCOS_BASE = "https://www.cocos-jpn.co.jp"
+COCOS_FAIR_PATH = "/menu/fair/"
+
+_PRICE_YEN_PAIR_RE = re.compile(r"¥\s*([\d,]+)\s*[（(]\s*税込\s*¥\s*([\d,]+)\s*[）)]")
+
+
+def parse_price_yen_pair(text: str | None) -> tuple[int, int] | None:
+    """「¥590(税込¥ 649)」→ (税抜, 税込)。ココスの ¥ 表記専用(共通の parse_price_pair は円表記用)。
+    税込側は「¥ 649」のように ¥ の後ろに空白が入ることがある。見つからなければ None。"""
+    t = unicodedata.normalize("NFKC", clean_text(text))
+    m = _PRICE_YEN_PAIR_RE.search(t)
+    if not m:
+        return None
+    return int(m.group(1).replace(",", "")), int(m.group(2).replace(",", ""))
+
+
+def _cocos_pid(link: str | None, name: str) -> str:
+    """識別キー: 商品詳細ページ(/menu/fair/<フェアのディレクトリ>/<商品>.html)があればそのパス
+    (例 marron2610-shinemuscat_parfait2609)。無ければ名前のハッシュ(接頭辞 cocos)。"""
+    if link:
+        p = link[len("/menu/fair/"):] if link.startswith("/menu/fair/") else link.strip("/")
+        p = re.sub(r"\.html$", "", p)
+        pid = re.sub(r"[^A-Za-z0-9_\-]+", "-", p).strip("-")
+        if pid:
+            return pid
+    return stable_id("cocos", name)
+
+
+def parse_cocos_fair_page(html: str) -> list[dict]:
+    """フェアページ(/menu/fair/)から [{title, items:[{pid, name, price, price_excl_tax, link}]}]。
+    フェアは「<h2>フェア名</h2> + <ul class="img_link type_menu_list">」の組で並び、商品はその中の
+    <li><a href="詳細ページ"><div class="name">名前</div><div class="price">価格</div></a></li>。
+    価格は「¥590(税込¥ 649)」の ¥ 表記。組が1つも無ければ ValueError(構造変更の疑い)。
+    価格が取れない商品は items に入れない(そのフェアが0件になるかどうかは呼び出し側が判定する)。"""
+    h = _strip_comments(html)
+    sections = []
+    pat = re.compile(r'<h2[^>]*>(.*?)</h2>\s*<ul[^>]*class="[^"]*type_menu_list[^"]*"[^>]*>(.*?)</ul>', re.S)
+    for m in pat.finditer(h):
+        items, seen = [], set()
+        for li in re.finditer(r'<li><a\s[^>]*href="([^"]*)"[^>]*>(.*?)</a></li>', m.group(2), re.S):
+            nm = re.search(r'<div class="name">(.*?)</div>', li.group(2), re.S)
+            pr = re.search(r'<div class="price">(.*?)</div>', li.group(2), re.S)
+            if not nm or not pr:
+                continue
+            pp = parse_price_yen_pair(pr.group(1))
+            name = clean_text(nm.group(1))
+            if not pp or not name:
+                continue
+            link = li.group(1) if li.group(1).startswith("/menu/fair/") else None
+            pid = _cocos_pid(link, name)
+            if pid in seen:
+                continue
+            seen.add(pid)
+            items.append({"pid": pid, "name": name, "price_excl_tax": pp[0], "price": pp[1], "link": link})
+        sections.append({"title": clean_text(m.group(1)), "items": items})
+    if not sections:
+        raise ValueError("ココス: フェアページにフェアの見出し(h2)+メニュー一覧(type_menu_list)が見つからない")
+    return sections
+
+
+def parse_cocos_news(html: str) -> list[dict]:
+    """/news/<年>/menu/ の一覧から [{date: YYYY-MM-DD, title, text, url}]。text は常に空(一覧にリード文が無い)。
+    構造が違えば空のリスト(発売日なしで続行)。"""
+    h = _strip_comments(html)
+    out = []
+    pat = (r'<li><a\s[^>]*href="(/news/[^"]+)"[^>]*>\s*<span class="label[^"]*">.*?</span>\s*'
+           r'<span class="date" data-postdate="(\d{4}-\d{2}-\d{2})">.*?</span>\s*<p>(.*?)</p>')
+    for m in re.finditer(pat, h, re.S):
+        out.append({"date": m.group(2), "title": clean_text(m.group(3)), "text": "",
+                    "url": COCOS_BASE + m.group(1)})
+    return out
