@@ -575,6 +575,18 @@ class TestBigboyCrawl(unittest.TestCase):
             kaki = [x for x in crawl.load_chain_products("bigboy") if x["name"] == "牡蠣フライ＆手ごねハンバーグ"][0]
             self.assertIsNone(kaki["launch_date"])
 
+    def test_fair_name_is_never_used_for_launch_matching(self):
+        # フェア名は全商品共通の欄名「期間限定メニュー」。その語と開始日を含む記事があっても、
+        # 商品名で照合できない商品に開始日が付いてはいけない(フェア名で照合すると全商品に同じ日が付く)
+        article = S.bigboy_news_article(
+            date="2026/10/01", title="【フェア情報】期間限定メニューのお知らせ",
+            body="「ビッグボーイ」では、期間限定メニューとして牡蠣フライを販売します。10月6日（月）から。")
+        with TempData():
+            run_chain(crawl.crawl_bigboy, bigboy_site(article=article), "2026-11-23")
+            prods = crawl.load_chain_products("bigboy")
+            self.assertEqual(len(prods), 3)
+            self.assertTrue(all(p["launch_date"] is None for p in prods))
+
     def test_news_failure_does_not_stop_recording(self):
         with TempData():
             site = bigboy_site()
