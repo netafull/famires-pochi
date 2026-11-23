@@ -1236,7 +1236,8 @@ def crawl_steakdon(getter, pending: dict, stats: dict, today: str | None = None)
     (fmenu_list.html?fmenu_categ_id=94)の商品名・価格を取る。バナー側のフェアページ
     (campaign_fair.html)は価格が画像の中だけなので巡回しない。商品詳細ページは一覧と同じ
     名前・価格しか載っていないため取らない(識別キーは一覧のリンクの fmenu_item_id)。
-    見出し・一覧の枠が無い回、価格が1件も取れない回は「一覧が不完全(構造変更の疑い)」として終了判定をしない。
+    見出し・一覧の枠が無い回、価格が1件も取れない回、一部の商品の名前・価格が読めない回は
+    「一覧が不完全(構造変更の疑い)」として終了判定をしない。
     開始日は /news.html の見出しを商品名で照合できたときだけ使う(フェア名は商品ごとに
     一覧へ載らないため、フェア名での照合はしない)。取れなければ記録開始日。
     終了はカテゴリページからの消失で判定する(共通エンジン)。"""
@@ -1245,6 +1246,7 @@ def crawl_steakdon(getter, pending: dict, stats: dict, today: str | None = None)
     st, today, now = run.st, run.today, run.now
     robots = Robots(getter, chain, st)
     entries: dict[str, dict] = {}
+    skipped = 0
     try:
         if not robots.allowed(STEAKDON_BASE, parsers.STEAKDON_FAIR_LIST_PATH):
             print("[skip] steakdon: robots.txtでDisallow", file=sys.stderr)
@@ -1259,6 +1261,9 @@ def crawl_steakdon(getter, pending: dict, stats: dict, today: str | None = None)
         if not page["items"]:
             print("[warn] steakdon: 価格が1件も取れない(構造変更の疑い。この回は終了判定をしない)", file=sys.stderr)
             return
+        skipped = page["skipped"]
+        if skipped:
+            print(f"[warn] steakdon: 名前・価格が読めない商品が{skipped}件ある(この回は終了判定をしない)", file=sys.stderr)
         for it in page["items"]:
             if it["pid"] in entries:
                 continue
@@ -1315,7 +1320,7 @@ def crawl_steakdon(getter, pending: dict, stats: dict, today: str | None = None)
         else:
             p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
 
-    run.finish(entries, True, build, refresh, enrich)
+    run.finish(entries, skipped == 0, build, refresh, enrich)
 
 
 # ---------------------------------------------------------------------------

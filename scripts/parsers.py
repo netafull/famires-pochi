@@ -652,11 +652,13 @@ def _steakdon_price_block(block_html: str) -> dict | None:
 
 def parse_steakdon_fair_list(html: str) -> dict:
     """フェアメニューのカテゴリページ(fmenu_list.html?fmenu_categ_id=94)から
-    {title, items:[{pid, name, price, price_max, price_excl_tax, price_variants, note, link}]}。
+    {title, items:[{pid, name, price, price_max, price_excl_tax, price_variants, note, link}], skipped}。
     商品は <div class="menulist_list_inner"> の中の、商品詳細へのリンク
     (fmenu_detail.html?fmenu_item_id=N)に付いた <p class="menu_name"> と <p class="menu_price">。
     識別キーは公式の商品ID(fmenu_item_id)。バナー側のフェアページ(campaign_fair.html)は価格が画像だけなので使わない。
     見出し(menu_list_subtitle)か一覧の枠(menulist_list_inner)が無ければ ValueError(構造変更の疑い)。
+    リンクはあったが名前か価格が読めなかった商品は items に入れず、件数を skipped に数える
+    (呼び出し側は skipped が1件以上なら、その回を「不完全」として終了判定をしない)。
     価格が取れた商品が0件なら items は空(呼び出し側が「不完全」とする)。"""
     h = _strip_comments(html)
     t = re.search(r'<div class="menu_list_subtitle">\s*<p>(.*?)</p>', h, re.S)
@@ -669,7 +671,7 @@ def parse_steakdon_fair_list(html: str) -> dict:
     if end < 0:
         raise ValueError("ステーキのどん: 商品一覧の枠(menulist_list_inner)に </ul> が見つからない")
     block_all = h[inner.end():end]
-    items, seen = [], set()
+    items, seen, skipped = [], set(), 0
     pat = r'<a\s[^>]*href="fmenu_detail\.html\?fmenu_item_id=(\d+)"[^>]*>(.*?)</a>'
     for m in re.finditer(pat, block_all, re.S):
         item_id, block = m.group(1), m.group(2)
@@ -680,11 +682,12 @@ def parse_steakdon_fair_list(html: str) -> dict:
         name = clean_text(nm.group(1)) if nm else ""
         price = _steakdon_price_block(pm.group(1)) if pm else None
         if not name or price is None:
+            skipped += 1
             continue
         seen.add(item_id)
         items.append({"pid": item_id, "name": name, "link": f"/fmenu_detail.html?fmenu_item_id={item_id}",
                       **price})
-    return {"title": clean_text(t.group(1)), "items": items}
+    return {"title": clean_text(t.group(1)), "items": items, "skipped": skipped}
 
 
 def parse_steakdon_news(html: str) -> list[dict]:
