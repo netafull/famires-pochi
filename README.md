@@ -1,13 +1,13 @@
 # ファミレスポチ
 
-デニーズ・ジョナサンの**期間限定フェアのメニュー**を1日1回巡回して記録し、フェアが終わって公式サイトから消えても残るアーカイブにするサイト
+デニーズ・ジョナサン・ココスの**期間限定フェアのメニュー**を1日1回巡回して記録し、フェアが終わって公式サイトから消えても残るアーカイブにするサイト
 （公開予定 https://famires.netaful.jp/ ）。価格（税込・税抜）・開始日・終了を確認した日を、あとから引ける形で残す。
 
 姉妹サイト（電書ポチ・家電ポチ・林檎ポチ・漫画ポチ・コンビニポチ・ファストフードポチ・カフェポチ ほか）と同じく、
 pip依存なしのPython標準ライブラリだけ（HTML解析は正規表現、PDFは扱わない）。
 **構造は `cafe-pochi`（ファストフードポチ由来）の汎用エンジン**（保存スキーマ・終了判定・歯止め・価格履歴・再登場・run_summary/_health・pending.json・
-ntfy通知・サイト生成・category icon・sitemap）をそのまま使い、チェーン固有の取得（`parse_dennys_*` / `parse_jonathan_*` と
-`crawl_dennys` / `crawl_jonathan`）だけを作っている。サイトの色は赤系 `#C62828`（ダークモード `#EF9A9A`）。
+ntfy通知・サイト生成・category icon・sitemap）をそのまま使い、チェーン固有の取得（`parse_dennys_*` / `parse_jonathan_*` / `parse_cocos_*` と
+`crawl_dennys` / `crawl_jonathan` / `crawl_cocos`）だけを作っている。サイトの色は赤系 `#C62828`（ダークモード `#EF9A9A`）。
 
 ## 使い方
 
@@ -29,10 +29,11 @@ python3 -m unittest discover -s tests       # 公式ページの最小限の写�
 - **保存も表示もしない: 説明文・画像・画像URL・栄養成分・アレルゲン。** パーサは説明文・画像のキーを読み取りもしない（テストで確認している）。
   ニュースの見出し・リード文は**開始日の照合のためにメモリ上で読むだけで、保存しない**（保存するのは日付と、照合に使った見出しの文字列・URLだけ。見出しは `news_title`）。
 - 初回から、その時点でフェアに載っている商品を**全部記録**する（`data/baseline_ids.json` は2回目以降の歯止めの判定にだけ使う）。
-- 商品1件1ファイル `data/products/{dennys|jonathan}/{id}.json`。既存ファイルは丸ごと上書きしない（初回取得が正）。更新するのは last_seen_at / status / price_history 等の追跡項目と、まだ空の開始日だけ。
+- 商品1件1ファイル `data/products/{dennys|jonathan|cocos}/{id}.json`。既存ファイルは丸ごと上書きしない（初回取得が正）。更新するのは last_seen_at / status / price_history 等の追跡項目と、まだ空の開始日だけ。
 - 各商品ページに「出典：○○公式サイト（取得日）」と公式ページへのリンクを付ける。aboutに「記録しているのは事実情報だけで、説明文・画像は載せていない」と書いてある。
 - 規約: デニーズは「ご利用に際して」（dennys.co.jp/dennys-japan/copyright.html）を確認済み（複製は私的使用の範囲まで・著作権法を超える転載は控える旨。自動取得・クローラー・営利目的の記載はなし）。
-  **すかいらーく（ジョナサン）の規約（corp.skylark.co.jp/sitepolicy/）は未確認**。そのため両チェーンとも事実のみを記録する。
+  ココスは「当サイトについて」（cocos-jpn.co.jp/aboutsite/）を2026-11-23に確認済み（一般的な著作権の注意のみ。自動取得・クローラーを名指しで禁じる条文はなし）。
+  **すかいらーく（ジョナサン）の規約（corp.skylark.co.jp/sitepolicy/）は未確認**。そのため全チェーンとも事実のみを記録する。
 
 ## 収集の前提（どのページから何を取るか）
 
@@ -64,6 +65,23 @@ python3 -m unittest discover -s tests       # 公式ページの最小限の写�
   同じ名前が複数ページに載るときは先に巡回したページ（fair → 他）の1件だけ。
 - 巡回するページ数は `jonathan_max_pages`（3）まで。スライドのページがこれを超えると超えた分が見えず、「一覧が不完全」として終了判定をしない（通知に出る）。
 
+### ココス（https://www.cocos-jpn.co.jp）
+
+- robots.txt は存在しない。しかも**存在しないパスには403でエラーページが返るサーバー仕様**のため、robots.txt の取得が
+  `BlockedError` になる。`crawl_cocos` だけ `Robots` のサブクラス（`CocosRobots`）で「robots.txt が無い=制限なし」として扱い、
+  実際のページ取得でブロックされた場合はそちらで止める（共通エンジンは触っていない）。ボット対策は無い（2026-11-23確認）。
+- フェアページ `/menu/fair/` の **「`<h2>フェア名</h2>` + `<ul class="img_link type_menu_list">」** の組から取る。商品は各 `<li>` の
+  **`<div class="name">`（商品名）と `<div class="price">`（価格）**。価格は円表記ではなく **「¥590(税込¥ 649)」の ¥ 表記**
+  （税込側は ¥ の後ろに空白が入る）なので、専用の `parse_price_yen_pair` で取る（共通の `parse_price_pair` は円表記用）。
+- **識別キー**: 商品詳細ページ（`/menu/fair/<フェアのディレクトリ>/<商品>.html`）のパス（`limited_sweets-roasted_sweet_potato_crepe2611`）。
+  リンクが無い商品は「cocos＋正規化した商品名」のハッシュ。詳細ページのファイル名が変わると別商品になる（デニーズのリンク方式と同じ限界）。
+- **開始日**: `/news/<年>/menu/`（お知らせのメニュー分類、1ページ目だけ）の見出しの「【11月19日(木)開始】」を、
+  デニーズと同じ `find_launch` で ①商品名 ②「～」より前の商品名 ③フェア名 の順に照合できたときだけ使う
+  （`launch_date_source` は `official_news` / `official_news_fair`）。一覧にリード文は無いので本文由来の照合は無い。
+  ニュースは当年分だけなので、年をまたぐと前年のフェアの開始日は拾えない。取れなければ**記録開始日**。
+- フェアページ冒頭の注記どおり、一部の店舗で取扱商品・販売時間帯・価格が異なる旨を、商品ページの「取り扱い」に出している。
+- 「追加カシスシロップ」のような追加オプションも、フェアページに名前と価格を持って載っているため商品として記録する。
+
 ## 販売状況の追跡（サイトの核・共通エンジン）
 
 - 巡回で一覧に居たら `last_seen_at` を更新し `status=on_sale`。価格が前回と違えば `price_history` に追記。
@@ -78,20 +96,21 @@ python3 -m unittest discover -s tests       # 公式ページの最小限の写�
 
 ## しきい値・上限
 
-| 項目 | デニーズ | ジョナサン | 場所 |
-|---|---|---|---|
-| 1回の実行のリクエスト上限 `max_requests_per_run` | 25 | 5 | `config.json` |
-| リクエスト間隔 `request_interval_seconds`（コードの下限は1秒） | 3秒 | 3秒 | `config.json` |
-| 歯止めの下限 `new_burst_min_by_chain` | 20 | 15 | `config.json` |
-| 歯止めの比率 `new_burst_ratio` | 0.6 | 0.6 | `config.json` |
-| 終了判定 | 別の日に連続2回消失 | 同左 | `crawl.py` の `MISSES_TO_END` |
-| 急減の検知 | 前回8件以上で半分未満→3日続くまで保留 | 同左 | `crawl.py` の `RATIO_*` |
-| ジョナサンの巡回ページ数 `jonathan_max_pages` | － | 3 | `config.json` |
+| 項目 | デニーズ | ジョナサン | ココス | 場所 |
+|---|---|---|---|---|
+| 1回の実行のリクエスト上限 `max_requests_per_run` | 25 | 5 | 10 | `config.json` |
+| リクエスト間隔 `request_interval_seconds`（コードの下限は1秒） | 3秒 | 3秒 | 3秒 | `config.json` |
+| 歯止めの下限 `new_burst_min_by_chain` | 20 | 15 | 20 | `config.json` |
+| 歯止めの比率 `new_burst_ratio` | 0.6 | 0.6 | 0.6 | `config.json` |
+| 終了判定 | 別の日に連続2回消失 | 同左 | 同左 | `crawl.py` の `MISSES_TO_END` |
+| 急減の検知 | 前回8件以上で半分未満→3日続くまで保留 | 同左 | 同左 | `crawl.py` の `RATIO_*` |
+| ジョナサンの巡回ページ数 `jonathan_max_pages` | － | 3 | － | `config.json` |
 
 - **歯止め（burst guard）**: 新規候補（baselineにも既存レコードにも無い項目）が `max(new_burst_min_by_chain, 一覧の項目数×new_burst_ratio)` を超えたら、
   公式のID体系・ページ構造の変更とみなして、その回はそのチェーンの新規を記録せず終了判定もしない（`pending.json` の `_suspected_restructure`、`run_summary.json` の `suspected`）。
   3日連続の保留で通知が「要判断」に変わる。**初回（baselineが無い）は対象外。** フェアは1回に5〜15品ほど出るので、最初から高めにしてある。
 - 実測（2026-11-23 初回）: デニーズ5リクエスト（robots・/menu/・フェア2・news）、ジョナサン4リクエスト（robots・メニュートップ・fair・dessert）。通常日の合計は10前後。上限に十分な余裕がある。
+  ココスは2026-11-23の初回確認で3リクエスト（robots・フェアページ・news）、10件を記録し、開始日は10件すべて取得できた（商品名由来1件・フェア名由来9件）。
 
 ## 運用手順
 
@@ -108,11 +127,11 @@ python3 -m unittest discover -s tests       # 公式ページの最小限の写�
 ## サイトの構成（docs/）
 
 - トップ（チェーンごとにグルーピング・開始日順・販売状況の絞り込み・メニュー名検索・ネタフルの最新レビュー）、`/archive/` と `/archive/YYYY-MM/`、
-  `/chains/{dennys|jonathan}/`、`/items/{chain}-{id}.html`（価格・税抜価格・フェア名・価格履歴・販売期間・出典と公式リンク。**説明文・画像は無い**）。
+  `/chains/{dennys|jonathan|cocos}/`、`/items/{chain}-{id}.html`（価格・税抜価格・フェア名・価格履歴・販売期間・出典と公式リンク。**説明文・画像は無い**）。
 - sitemap.xml、robots.txt（AI学習専用クローラーを拒否）、OGP、CNAME（`famires.netaful.jp`）、.nojekyll。
 - 広告（AdSense）とGA4は `config.json`（`adsense_client_id` / `adsense_ad_slot` はカフェポチと同じ値、`ga_measurement_id` は発行済みの値）。
   フッターの開示の一文は実際の設定（AdSense・GAの有無）に合わせて出る。
-- ネタフルのレビュー連携（`fetch_netaful_reviews.py`）は、タグが無いので記事の全文検索（デニーズ・ジョナサン）＋タイトル判定。レビュー記事のサムネイルはネタフル自身の画像。
+- ネタフルのレビュー連携（`fetch_netaful_reviews.py`）は、タグが無いので記事の全文検索（デニーズ・ジョナサン・ココス）＋タイトル判定。レビュー記事のサムネイルはネタフル自身の画像。
 - アイコン類（favicon・logo・OGP）は**まだ作っていない**（`docs/assets/` には category icon だけ）。`~/Desktop/Claude/pochi-branding/` での生成はオーナー確認後。
 
 ## 既知の限界
@@ -125,6 +144,8 @@ python3 -m unittest discover -s tests       # 公式ページの最小限の写�
 - ジョナサンは alt の文章構造に依存する。名前の区切りに使える `。` `、` `：` が無い文章や、別の価格表記（`¥1,099`）のページは取れない（取れなければ価格0件として「不完全」になるだけで、誤った記録はしない）。
   「揚げなす＆モッツァレラ入り」のような、直前の商品の派生（親の名前が前の文にある）は名前だけの記録になる。
 - ジョナサンは開始日が常に記録開始日（プレスリリース未使用）。
+- ココスの開始日はお知らせ（当年分・メニュー分類の1ページ目）の見出し照合で、見出しに商品名・フェア名と開始日がそろわない商品は取れない。
+  ココスの識別キーは詳細ページのファイル名由来なので、公式がファイル名を変えると別商品になる（旧商品は終了、新しいほうは新規として記録される）。
 - 価格は店舗で異なる場合がある（デニーズは新宿西口店など一部店舗が別価格）。表示は公式ページの標準価格。
 - 公式のHTML構造の変更に弱い。壊れたら list_failed／保留として通知され、終了判定はしない。
 
