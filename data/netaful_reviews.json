@@ -1,5 +1,19 @@
 {
  "articles": {
+  "bigboy": [
+   {
+    "date": "2023-02-14T11:30:00",
+    "id": 125497,
+    "link": "https://netaful.jp/neta-eat/0125497.html",
+    "product_name": "メキシカンオーバーライス",
+    "thumb": {
+     "height": 180,
+     "url": "https://netaful.jp/wp-content/uploads/2023/02/big-boy-mexican-000--300x180.jpg",
+     "width": 300
+    },
+    "title": "【ビッグボーイ】ピリ辛の特製チリコンカンソースでハンバーグとチキンが美味しい「メキシカンオーバーライス」を発売（2/16）"
+   }
+  ],
   "cocos": [
    {
     "date": "2025-12-07T17:30:00",
@@ -312,6 +326,6 @@
   ]
  },
  "errors": [],
- "fetched_at": "2026-11-23T19:05:39+09:00",
+ "fetched_at": "2026-11-23T19:56:13+09:00",
  "matches": {}
 }
