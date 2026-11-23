@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""ネタフル(WordPress)の公開REST APIから、デニーズ・ジョナサン・ココス・ビッグボーイの記事を取得し、
+"""ネタフル(WordPress)の公開REST APIから、デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの記事を取得し、
 ファミレスポチの商品(data/products/)とひも付けてキャッシュする。
 
 認証不要のREST API (https://netaful.jp/wp-json/wp/v2/posts?tags=...) を使う。
 タグ(config.json の netaful_tags)は全チェーンとも未設定(null)。記事の全文検索
 (search=デニーズ 等。config の netaful_search_terms)の結果のうち、タイトルに netaful_title_filters の語
-(「デニーズ」「ジョナサン」「ココス」「ビッグボーイ」)を含む記事だけを採用する。検索結果は関連度順なので、日付の新しい順(orderby=date)で取る。
+(「デニーズ」「ジョナサン」「ココス」「ビッグボーイ」「ジョイフル」)を含む記事だけを採用する。検索結果は関連度順なので、日付の新しい順(orderby=date)で取る。
 
 初回(または --backfill 指定時)は全ページを取得する。通常実行(毎日、crawl.pyの後)は
 最新1ページ(per_page=50)だけ取得してキャッシュに追加し、全商品に対して再照合する
@@ -56,8 +56,9 @@ TAGS = {k: (int(v) if v is not None else None) for k, v in CONFIG["netaful_tags"
 # タグの付け漏れが多いチェーンだけ、全文検索の結果も使う(タイトルに語を含むものだけ採用)
 TITLE_FILTERS: dict[str, list[str]] = CONFIG.get("netaful_title_filters", {})
 SEARCH_TERMS: dict[str, str] = CONFIG.get("netaful_search_terms", {})
-# 下記のチェーン(ファミレスポチでは全3社)は、タグ・検索のどちらの結果にも常にタイトル判定をかける
-# (検索は本文にだけ語が出る無関係の記事も拾うため)。除外語(netaful_title_excludes)はジョナサンの「アイブ」(ジョナサン・アイブの記事)
+# 下記のチェーン(ファミレスポチでは全5社)は、タグ・検索のどちらの結果にも常にタイトル判定をかける
+# (検索は本文にだけ語が出る無関係の記事も拾うため)。除外語(netaful_title_excludes)はジョナサンの「アイブ」
+# (ジョナサン・アイブの記事)と、ジョイフルの「本田」(ジョイフル本田=ホームセンターの記事)
 TITLE_EXCLUDES: dict[str, list[str]] = CONFIG.get("netaful_title_excludes", {})
 TITLE_ALWAYS: set[str] = set(CONFIG.get("netaful_title_always", []))
 

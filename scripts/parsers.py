@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココス・ビッグボーイの公式ページのパーサ。
+"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの公式ページのパーサ。
 
 ネットワークには触らない純粋関数だけを置く(合成フィクスチャでテストする)。
 公式のHTML/JSONの構造が変わったら、まずここが壊れる。壊れ方は2通りに分ける:
@@ -501,3 +501,104 @@ def parse_bigboy_news_article(html: str, url: str) -> dict | None:
         body = strip_html(b.group(1))
     return {"date": f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}",
             "title": clean_text(t.group(1)), "text": body, "url": url}
+# ---------------------------------------------------------------------------
+# ジョイフル (www.joyfull.co.jp)
+# ---------------------------------------------------------------------------
+
+JOYFULL_BASE = "https://www.joyfull.co.jp"
+JOYFULL_LIST_PATH = "/menu?category=19"
+JOYFULL_NEWS_PATH = "/news?category=menu"
+JOYFULL_CATEGORY_NAME = "季節・期間限定"
+
+_JOYFULL_PRICE_RE = re.compile(r"¥\s*([\d,]+)\s*[（(]\s*税込\s*¥\s*([\d,]+)\s*[）)]")
+_JOYFULL_LISTED_LAUNCH_RE = re.compile(
+    r"^【(\d{4})年(\d{1,2})月(\d{1,2})日（[^）]*）(?:\d{1,2}時)?より販売】")
+
+
+def parse_joyfull_price_pair(text: str | None) -> tuple[int, int] | None:
+    """「￥1,299 （税込￥1,428）」→ (税抜, 税込)。全角￥と全角括弧の書式(NFKCで半角化してから読む)。
+    共通の parse_price_pair(「N円（税込M円）」)では取れない。見つからなければ None。"""
+    t = unicodedata.normalize("NFKC", clean_text(text))
+    m = _JOYFULL_PRICE_RE.search(t)
+    if not m:
+        return None
+    return int(m.group(1).replace(",", "")), int(m.group(2).replace(",", ""))
+
+
+def parse_joyfull_listed_launch(name: str | None) -> str | None:
+    """商品名の先頭の「【2026年12月1日（火）15時より販売】」→ "2026-12-01"。
+    販売開始前の商品にだけ付く告知で、年まで含む一次情報。付いていなければ None。"""
+    m = _JOYFULL_LISTED_LAUNCH_RE.match(name or "")
+    if not m:
+        return None
+    try:
+        return datetime.date(int(m.group(1)), int(m.group(2)), int(m.group(3))).isoformat()
+    except ValueError:
+        return None
+
+
+def parse_joyfull_category(html: str) -> dict:
+    """「季節・期間限定」の一覧(/menu?category=19)から
+    {title, declared_count, items:[{pid, name, price, price_excl_tax, listed_launch, link}]}。
+    商品は ul.menu-grid の li.mg-item のカード(a.menu-card)で、識別キーは商品ページのパス(/menu/<数値ID>)。
+    価格(全角￥の税抜＋税込併記)はカードの中(p.menu-meta)にある。名前は公式の表示どおり
+    (販売開始の告知「【…より販売】」の接頭辞も含む。開始日は listed_launch に別途入れる)。
+    一覧の枠(見出し・ul.menu-grid)が無ければ ValueError(構造変更の疑い)。
+    価格の取れないカードは items に入れない(呼び出し側が declared_count との差で「不完全」とする)。"""
+    h = _strip_comments(html)
+    t = re.search(r"<h2[^>]*>\s*" + JOYFULL_CATEGORY_NAME + r"\s*</h2>", h)
+    g = re.search(r'<ul[^>]*class="[^"]*menu-grid[^"]*"[^>]*>(.*?)</ul>', h, re.S)
+    if not t or not g:
+        raise ValueError("ジョイフル: 一覧の見出し(季節・期間限定)またはメニュー一覧(menu-grid)が見つからない")
+    cnt = re.search(r'該当件数\s*<span class="count">(\d+)</span>', h)
+    items, seen = [], set()
+    for li in re.finditer(r'<li[^>]*class="[^"]*mg-item[^"]*"[^>]*>(.*?)</li>', g.group(1), re.S):
+        a = re.search(r'href="https://www\.joyfull\.co\.jp/menu/(\d+)"', li.group(1))
+        name_m = re.search(r'<h3[^>]*class="[^"]*mg-title[^"]*"[^>]*>(.*?)</h3>', li.group(1), re.S)
+        price_m = re.search(r'<p[^>]*class="[^"]*menu-meta[^"]*"[^>]*>(.*?)</p>', li.group(1), re.S)
+        if not a or not name_m:
+            continue
+        pp = parse_joyfull_price_pair(price_m.group(1)) if price_m else None
+        name = clean_text(name_m.group(1))
+        if not pp or not name:
+            continue
+        pid = a.group(1)
+        if pid in seen:
+            continue
+        seen.add(pid)
+        items.append({"pid": pid, "name": name, "price_excl_tax": pp[0], "price": pp[1],
+                      "listed_launch": parse_joyfull_listed_launch(name),
+                      "link": f"/menu/{pid}"})
+    return {"title": JOYFULL_CATEGORY_NAME,
+            "declared_count": int(cnt.group(1)) if cnt else None,
+            "items": items}
+
+
+def parse_joyfull_detail(html: str) -> dict:
+    """商品ページから {fair}。フェア名はパンくず(BreadcrumbList)の
+    「ホーム / メニュー / 季節・期間限定 / <フェア名> / <商品名>」の4番目。フェアに属さない商品は None。
+    パンくずが無い・並びが想定と違えば ValueError(構造変更の疑い)。"""
+    h = _strip_comments(html)
+    m = re.search(r'<ol[^>]*class="[^"]*breadcrumb-list[^"]*"[^>]*>(.*?)</ol>', h, re.S)
+    if not m:
+        raise ValueError("ジョイフル: 商品ページのパンくず(breadcrumb-list)が見つからない")
+    names = [clean_text(x) for x in re.findall(r'itemprop="name"[^>]*>([^<]+)</span>', m.group(1))]
+    if len(names) not in (4, 5) or names[:3] != ["ホーム", "メニュー", JOYFULL_CATEGORY_NAME]:
+        raise ValueError(f"ジョイフル: パンくずの並びが想定と違う: {names}")
+    return {"fair": names[3] if len(names) == 5 else None}
+
+
+def parse_joyfull_news(html: str) -> list[dict]:
+    """お知らせ(メニュー分類)の一覧から [{date: YYYY-MM-DD, title, url}]。
+    カード(a.menu-card)の中の span.date(YYYY.MM.DD)と h3.news-title を読む。リード文は一覧に無いので text は空。
+    構造が違えば空のリスト(発売日なしで続行)。"""
+    h = _strip_comments(html)
+    out = []
+    for a in re.finditer(r'<a\s[^>]*href="(https://www\.joyfull\.co\.jp/news/\d+)"[^>]*>(.*?)</a>', h, re.S):
+        d = re.search(r'<span class="date">(\d{4})\.(\d{1,2})\.(\d{1,2})</span>', a.group(2))
+        t = re.search(r'<h3[^>]*class="[^"]*news-title[^"]*"[^>]*>(.*?)</h3>', a.group(2), re.S)
+        if not d or not t:
+            continue
+        out.append({"date": f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}",
+                    "title": clean_text(t.group(1)), "url": a.group(1)})
+    return out
