@@ -704,7 +704,7 @@ class TestJoyfullCrawl(unittest.TestCase):
             self.assertTrue(st["joyfull"]["list_ok"])
             self.assertEqual(ids("joyfull"), ["502", "527", "602"])
             p = helpers.prod("joyfull", "527")
-            self.assertEqual((p["name"], p["price"], p["price_excl_tax"]), ("「幻のコショウのチキン竜田」", 1032, 939))
+            self.assertEqual((p["name"], p["price"], p["price_excl_tax"]), ("幻のコショウのチキン竜田", 1032, 939))
             self.assertEqual(p["fair"], "世界の山ちゃんフェア")
             self.assertEqual(p["official_url"], JOYFULL + "/menu/527")
             self.assertEqual(p["price_history"], [{"date": "2026-11-23", "price": 1032}])
@@ -775,6 +775,15 @@ class TestJoyfullCrawl(unittest.TestCase):
                 _, st = run_chain(crawl.crawl_joyfull, broken, d)
                 self.assertFalse(st["joyfull"]["list_ok"])
             self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("joyfull")))
+
+    def test_recorded_name_follows_list_display(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")
+            p = helpers.prod("joyfull", "527")
+            p["name"] = "「幻のコショウのチキン竜田」"  # かぎかっこ付きで記録されていた既存データの想定
+            crawl.save_product("joyfull", p)
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-24")
+            self.assertEqual(helpers.prod("joyfull", "527")["name"], "幻のコショウのチキン竜田")
 
     def test_second_run_skips_detail_pages_of_known_products(self):
         with TempData():

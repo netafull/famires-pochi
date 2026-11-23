@@ -544,6 +544,7 @@ def parse_joyfull_category(html: str) -> dict:
     価格(全角￥の税抜＋税込併記)はカードの中(p.menu-meta)にある。名前に販売開始の告知
     「【…より販売】」の接頭辞が付いていたら、開始日は listed_launch に別途入れ、名前からは接頭辞を落とす
     (表示と名前での照合は接頭辞なしで行う。モルのレビュー指摘、2026-11-23)。
+    名前全体を囲む「」も、前後のかぎかっこだけを外して記録する(同、2026-11-23)。
     一覧の枠(見出し・ul.menu-grid)が無ければ ValueError(構造変更の疑い)。
     価格の取れないカードは items に入れない(呼び出し側が declared_count との差で「不完全」とする)。"""
     h = _strip_comments(html)
@@ -570,6 +571,10 @@ def parse_joyfull_category(html: str) -> dict:
         listed_launch = parse_joyfull_listed_launch(name)
         if listed_launch:
             name = _JOYFULL_LISTED_LAUNCH_RE.sub("", name).strip()
+        if len(name) >= 2 and name.startswith("「") and name.endswith("」"):
+            # 公式の表示では商品名全体が「」で囲まれている。前後のかぎかっこは名前の一部ではないので外す
+            # (モルのレビュー指摘、2026-11-23)
+            name = name[1:-1].strip()
         items.append({"pid": pid, "name": name, "price_excl_tax": pp[0], "price": pp[1],
                       "listed_launch": listed_launch,
                       "link": f"/menu/{pid}"})
