@@ -111,3 +111,53 @@ def cocos_news(entries=()) -> str:
                 f'      <span class="date" data-postdate="{d}">{y}/{m}/{dd}</span>\n'
                 f'      <p>{title}</p>\n    </a></li>\n')
     return f'<html><body><div class="tab_cont"><ul>\n{lis}</ul></div></body></html>'
+BIGBOY_ITEMS = [
+    ("牡蠣フライ＆大俵ハンバーグ", [("大俵150g", 1490, 1639), ("大俵200g", 1650, 1815), ("大俵250g", 1850, 2035)]),
+    ("牡蠣フライ＆手ごねハンバーグ", [("", 1290, 1419)]),
+    ("甘栗のモンブランファッジサンデー", [("", 590, 649)]),
+]
+
+
+def bigboy_grand_menu(items=BIGBOY_ITEMS, regular=("定番ハンバーグ", [("", 990, 1089)]), commented: str = "") -> str:
+    """items: [(名前, [(サイズ, 税抜, 税込)])]。価格は ¥ 表記で、¥ と数字は別タグ(span.yen)に分かれる。
+    期間限定メニュー欄のほかに定番の欄(大俵ハンバーグ)も置く(欄の外は読まないことの確認用)。"""
+    def box(name, prices):
+        ps = "".join(
+            f'<p class="price"><span class="size">{sz}</span><span class="yen">¥</span>\n{ex:,}'
+            f'<span class="tax_sum">（<span class="tax">税込</span><span class="yen">¥</span>\n{inc:,}）</span></p>'
+            for sz, ex, inc in prices)
+        return (f'<li class="box"><p class="pic"><img src="/x.jpg"></p>'
+                f'<h4 class="name"><span class="main">{name}</span>'
+                f'<span class="sub">タルタルソース＆濃厚ソース付</span></h4>{ps}</li>\n')
+    limited = "".join(box(n, ps) for n, ps in items)
+    reg = box(*regular) if regular else ""
+    return f"""<html><body><div class="tab_contents">
+<section id="219"><div class="tab_title_block"><h3 class="tab_title">期間限定メニュー</h3></div>
+<ul class="menu_block">
+{limited}<!-- {commented} --></ul></section>
+<section id="120"><div class="tab_title_block"><h3 class="tab_title">大俵ハンバーグ</h3></div>
+<ul class="menu_block">
+{reg}</ul></section>
+</div></body></html>"""
+
+
+def bigboy_fair_list(links=(("/news/fair/6555.html",
+                              "【フェア情報】「甘栗のモンブランファッジサンデー」、10月20日（火）より販売！"),)) -> str:
+    """links: [(記事のパス, 見出し)]"""
+    lis = "".join(
+        f'<li class="post"><p class="item_detail_pic"><img src="/x.jpg"></p>'
+        f'<div class="post_inner"><p class="item">{t}</p>'
+        f'<p class="item_detail"><p>リード文</p></p>'
+        f'<div class="to_link"><a href="{p}" class="btn"><span class="label">詳細はこちら</span></a></div>'
+        f'</div></li>\n' for p, t in links)
+    return f'<html><body><ul class="news_block">\n{lis}</ul></body></html>'
+
+
+def bigboy_news_article(date: str = "2026/10/14",
+                        title: str = "【フェア情報】「甘栗のモンブランファッジサンデー」、10月20日（火）より販売！",
+                        body: str = "「ビッグボーイ」では、10月20日（火）より「甘栗のモンブランファッジサンデー」を販売します。") -> str:
+    return (f'<html><body><section id="section-news"><ul class="news_block"><li class="post">'
+            f'<div class="post_inner"><p class="date">{date}</p>'
+            f'<p class="post_icon icon_fair">フェア情報</p><p class="item">{title}</p></div>'
+            f'<p class="item_detail"><p>{body}</p></p>'
+            f'</li></ul></section></body></html>')

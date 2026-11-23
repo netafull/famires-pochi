@@ -1,8 +1,8 @@
 {
- "top_title": "ファミレスポチ｜デニーズ・ジョナサン・ココスの期間限定メニュー記録",
+ "top_title": "ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイの期間限定メニュー記録",
  "site_title": "ファミレスポチ",
- "site_tagline": "デニーズ・ジョナサン・ココスの期間限定フェアを記録して残す",
- "site_description": "デニーズ・ジョナサン・ココスの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。",
+ "site_tagline": "デニーズ・ジョナサン・ココス・ビッグボーイの期間限定フェアを記録して残す",
+ "site_description": "デニーズ・ジョナサン・ココス・ビッグボーイの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。",
  "site_url": "https://famires.netaful.jp/",
  "site_accent": "#C62828",
  "ga_measurement_id": "G-D8F2T2XB5W",
@@ -29,6 +29,13 @@
    "base_url": "https://www.cocos-jpn.co.jp",
    "color": "#E65100",
    "color_dark": "#FFB74D"
+  },
+  {
+   "slug": "bigboy",
+   "name": "ビッグボーイ",
+   "base_url": "https://www.bigboyjapan.co.jp",
+   "color": "#1565C0",
+   "color_dark": "#64B5F6"
   }
  ],
  "chain_official": {
@@ -46,26 +53,35 @@
    "source": "ココス公式サイト",
    "url": "https://www.cocos-jpn.co.jp/",
    "menu_url": "https://www.cocos-jpn.co.jp/menu/fair/"
+  },
+  "bigboy": {
+   "source": "ビッグボーイ公式サイト",
+   "url": "https://www.bigboyjapan.co.jp/",
+   "menu_url": "https://www.bigboyjapan.co.jp/menu/grand/"
   }
  },
  "user_agent": "FamiresPochi/1.0 (+https://famires.netaful.jp/)",
  "request_interval_seconds": {
   "dennys": 3,
   "jonathan": 3,
-  "cocos": 3
+  "cocos": 3,
+  "bigboy": 3
  },
  "max_requests_per_run": {
   "dennys": 25,
   "jonathan": 5,
-  "cocos": 10
+  "cocos": 10,
+  "bigboy": 20
  },
  "new_burst_min": 15,
  "new_burst_ratio": 0.6,
  "new_burst_min_by_chain": {
   "dennys": 20,
   "jonathan": 15,
-  "cocos": 20
+  "cocos": 20,
+  "bigboy": 15
  },
+ "bigboy_news_max_articles": 8,
  "jonathan_max_pages": 3,
  "jonathan_skip_slugs": [
   "collab",
@@ -83,12 +99,14 @@
  "netaful_tags": {
   "dennys": null,
   "jonathan": null,
-  "cocos": null
+  "cocos": null,
+  "bigboy": null
  },
  "netaful_search_terms": {
   "dennys": "デニーズ",
   "jonathan": "ジョナサン",
-  "cocos": "ココス"
+  "cocos": "ココス",
+  "bigboy": "ビッグボーイ"
  },
  "netaful_title_filters": {
   "dennys": [
@@ -99,13 +117,17 @@
   ],
   "cocos": [
    "ココス"
+  ],
+  "bigboy": [
+   "ビッグボーイ"
   ]
  },
  "netaful_title_excludes": {"jonathan": ["アイブ"]},
  "netaful_title_always": [
   "dennys",
   "jonathan",
-  "cocos"
+  "cocos",
+  "bigboy"
  ],
  "related_sites": [
   {
@@ -263,9 +285,9 @@
  ],
  "policy_url": "",
  "about": [
-  "デニーズ・ジョナサン・ココスの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。",
+  "デニーズ・ジョナサン・ココス・ビッグボーイの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。",
   "記録しているのは事実情報だけです。フェア名・商品名・価格・日付を載せ、説明文と画像は載せていません。詳しくは各社の公式サイトをご覧ください。各商品のページから、公式ページへ移動できます。",
-  "終了の判定は、公式サイトのフェアのページから2日続けて消えたときだけ行います。終了日は「消えたのを確認した日」で、公式の最終販売日とはずれることがあります。開始日はデニーズは公式ニュースの見出し・リード文から、ココスは公式のお知らせの見出しから、取れなければ記録を始めた日です。ジョナサンは記録を始めた日です。",
+  "終了の判定は、公式サイトのフェアのページから2日続けて消えたときだけ行います。終了日は「消えたのを確認した日」で、公式の最終販売日とはずれることがあります。開始日はデニーズは公式ニュースの見出し・リード文から、ココスは公式のお知らせの見出しから、ビッグボーイは公式ニュースの見出し・本文から、取れなければ記録を始めた日です。ジョナサンは記録を始めた日です。",
   "価格は税込を表示し、税抜は各商品のページに載せています。一部の店舗では価格や取り扱いが異なります。価格や販売状況は取得した時点のものです。当サイトは各社とは関係のない非公式サイトで、最新の情報は各社の公式サイトで確認してください。"
  ]
 }

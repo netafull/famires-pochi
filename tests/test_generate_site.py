@@ -112,6 +112,19 @@ class TestItemPage(unittest.TestCase):
         self.assertIn("<title>ココス「勤労感謝の芋栗かぼちゃクレープ」の価格・販売期間｜ファミレスポチ</title>", h)
 
 
+class TestBigboyPage(unittest.TestCase):
+    def test_item_page_source_and_price_range(self):
+        p = item(chain="bigboy", pid="grand-1", name="牡蠣フライ＆大俵ハンバーグ", price=1639, price_max=2035,
+                 price_excl_tax=1490, fair="期間限定メニュー",
+                 price_variants=[{"label": "大俵150g", "price": 1639}, {"label": "大俵250g", "price": 2035}],
+                 source_list=["www.bigboyjapan.co.jp/menu/grand/"],
+                 official_url="https://www.bigboyjapan.co.jp/menu/grand/")
+        h = G.render_item_page(p, [p])
+        self.assertIn("出典：ビッグボーイ公式サイト", h)
+        self.assertIn("1,639〜2,035円（税込）", h)
+        self.assertIn("<th>大俵150g</th><td>1,639円（税込）</td>", h)
+
+
 class TestSameName(unittest.TestCase):
     def test_same_name_gets_a_qualifier(self):
         a = item(pid="a", name="おいもプリン", launch_date="2026-10-28")
@@ -134,7 +147,7 @@ class TestLists(unittest.TestCase):
         self.assertNotIn("カロリー順", h)
         self.assertEqual(len(re.findall(r"<h1[ >]", h)), 1)
         self.assertIn('"name": "ファミレスポチ"', h)
-        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココスの期間限定メニュー記録</title>", h)
+        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイの期間限定メニュー記録</title>", h)
 
     def test_card_has_no_image_besides_category_icon(self):
         for m in re.finditer(r"<img[^>]+>", G.render_card(self.items[0])):

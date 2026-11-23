@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""ネタフル(WordPress)の公開REST APIから、デニーズ・ジョナサン・ココスの記事を取得し、
+"""ネタフル(WordPress)の公開REST APIから、デニーズ・ジョナサン・ココス・ビッグボーイの記事を取得し、
 ファミレスポチの商品(data/products/)とひも付けてキャッシュする。
 
 認証不要のREST API (https://netaful.jp/wp-json/wp/v2/posts?tags=...) を使う。
 タグ(config.json の netaful_tags)は全チェーンとも未設定(null)。記事の全文検索
 (search=デニーズ 等。config の netaful_search_terms)の結果のうち、タイトルに netaful_title_filters の語
-(「デニーズ」「ジョナサン」「ココス」)を含む記事だけを採用する。検索結果は関連度順なので、日付の新しい順(orderby=date)で取る。
+(「デニーズ」「ジョナサン」「ココス」「ビッグボーイ」)を含む記事だけを採用する。検索結果は関連度順なので、日付の新しい順(orderby=date)で取る。
 
 初回(または --backfill 指定時)は全ページを取得する。通常実行(毎日、crawl.pyの後)は
 最新1ページ(per_page=50)だけ取得してキャッシュに追加し、全商品に対して再照合する

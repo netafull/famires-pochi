@@ -240,5 +240,77 @@ class TestCocosNews(unittest.TestCase):
         self.assertEqual(P.parse_cocos_news("<html>変わった</html>"), [])
 
 
+class TestBigboyPrice(unittest.TestCase):
+    def test_yen_pair_with_split_tags(self):
+        html = ('<span class="size">大俵150g</span><span class="yen">¥</span>\n1,490'
+                '<span class="tax_sum">（<span class="tax">税込</span><span class="yen">¥</span>\n1,639）</span>')
+        self.assertEqual(P.parse_bigboy_price_pair(html), (1490, 1639))
+        self.assertEqual(P.parse_bigboy_price_pair("¥590（税込¥649）"), (590, 649))
+        self.assertIsNone(P.parse_bigboy_price_pair("おまかせ"))
+        # 円表記の共通パーサでは ¥ 表記は取れない(書式が違う)
+        self.assertIsNone(P.parse_price_pair("¥590（税込¥649）"))
+
+
+class TestBigboyGrandMenu(unittest.TestCase):
+    def test_items_names_prices_and_variants(self):
+        page = P.parse_bigboy_grand_menu(S.bigboy_grand_menu())
+        self.assertEqual(page["title"], "期間限定メニュー")
+        self.assertEqual([i["name"] for i in page["items"]],
+                         ["牡蠣フライ＆大俵ハンバーグ", "牡蠣フライ＆手ごねハンバーグ", "甘栗のモンブランファッジサンデー"])
+        sized = page["items"][0]
+        self.assertEqual((sized["price_excl_tax"], sized["price"], sized["price_max"]), (1490, 1639, 2035))
+        self.assertEqual(sized["price_variants"],
+                         [{"label": "大俵150g", "price": 1639}, {"label": "大俵200g", "price": 1815},
+                          {"label": "大俵250g", "price": 2035}])
+        single = page["items"][1]
+        self.assertEqual((single["price_excl_tax"], single["price"], single["price_max"]), (1290, 1419, None))
+        self.assertEqual(single["price_variants"], [])
+
+    def test_other_sections_and_sub_and_comments_are_not_read(self):
+        page = P.parse_bigboy_grand_menu(S.bigboy_grand_menu(
+            commented='<li class="box"><h4 class="name"><span class="main">コメント内の商品</span></h4>'
+                      '<p class="price"><span class="yen">¥</span>100<span class="tax_sum">（税込¥110）</span></p></li>'))
+        names = [i["name"] for i in page["items"]]
+        self.assertNotIn("定番ハンバーグ", names)  # 定番の欄は対象外
+        self.assertNotIn("コメント内の商品", names)
+        self.assertTrue(all("タルタル" not in n for n in names))  # span.sub(付け合わせの注記)は名前に含めない
+
+    def test_no_section_is_error_and_no_price_is_empty(self):
+        with self.assertRaises(ValueError):
+            P.parse_bigboy_grand_menu("<html>変わった</html>")
+        page = P.parse_bigboy_grand_menu(S.bigboy_grand_menu(items=[("価格なし商品", [])], regular=None))
+        self.assertEqual(page["items"], [])
+
+    def test_ids_are_stable_across_runs(self):
+        a = P.parse_bigboy_grand_menu(S.bigboy_grand_menu())["items"]
+        b = P.parse_bigboy_grand_menu(S.bigboy_grand_menu())["items"]
+        self.assertEqual([i["pid"] for i in a], [i["pid"] for i in b])
+        self.assertTrue(all(i["pid"].startswith("grand-") for i in a))
+
+
+class TestBigboyNews(unittest.TestCase):
+    def test_fair_links(self):
+        links = P.parse_bigboy_fair_links(S.bigboy_fair_list())
+        self.assertEqual(links, [{"path": "/news/fair/6555.html",
+                                  "title": "【フェア情報】「甘栗のモンブランファッジサンデー」、10月20日（火）より販売！"}])
+        self.assertEqual(P.parse_bigboy_fair_links("<html>変わった</html>"), [])
+
+    def test_article_date_title_text(self):
+        art = P.parse_bigboy_news_article(S.bigboy_news_article(), "https://www.bigboyjapan.co.jp/news/fair/6555.html")
+        self.assertEqual(art["date"], "2026-10-14")
+        self.assertIn("甘栗のモンブランファッジサンデー", art["title"])
+        self.assertIn("10月20日（火）より", art["text"])
+        self.assertEqual(art["url"], "https://www.bigboyjapan.co.jp/news/fair/6555.html")
+
+    def test_launch_date_uses_article_year(self):
+        art = P.parse_bigboy_news_article(S.bigboy_news_article(), "https://www.bigboyjapan.co.jp/news/fair/6555.html")
+        import datetime
+        self.assertEqual(P.launch_date_from_text(art["title"], datetime.date(2026, 10, 14)), "2026-10-20")
+
+    def test_garbage_article_is_none(self):
+        self.assertIsNone(P.parse_bigboy_news_article("<html>変わった</html>", "https://www.bigboyjapan.co.jp/news/fair/1.html"))
+
+
+
 if __name__ == "__main__":
     unittest.main()
