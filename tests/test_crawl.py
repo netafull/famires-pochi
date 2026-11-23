@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 
 import helpers
-from helpers import DENNYS, SKY, FakeSite, TempData, run_chain, BlockedError, NotFoundError
+from helpers import DENNYS, SKY, JOYFULL, FakeSite, TempData, run_chain, BlockedError, NotFoundError
 import crawl
 import synth as S
 
@@ -119,6 +119,64 @@ def ids(chain):
     return sorted(p["product_id"] for p in crawl.load_chain_products(chain))
 
 
+JF_LIST = JOYFULL + "/menu?category=19"
+JF_NEWS = JOYFULL + "/news?category=menu"
+
+OIMO_ITEMS = [
+    ("蜜いものザ・サンデー～紅天使使用", 1790, 1969, "/menu/dessert/sweet-potato-sundae/"),
+    ("蜜いものブリュレパンケーキ（パンケーキ4枚）", 980, 1078, "/menu/dessert/sweet-potato-brulee-pancakes/"),
+    ("おいもプリン", 300, 330, "/menu/dessert/sweet-potato-pudding/"),
+]
+COLLAB_ITEMS = [("麻婆牡蠣＆豆腐", 690, 759, None), ("辛味噌らぁ麺", 1450, 1595, None)]
+NEWS = [("2026/10/14", "「蜜いものザ・サンデー」&初登場「蜜いものブリュレパンケーキ」全8品10月28日（水）販売開始", "リード"),
+        ("2026/10/1", "デニーズ×飯田商店 監修の新境地！ 10月14日（水）スタート", "リード")]
+
+
+def dennys_site(oimo=OIMO_ITEMS, collab=COLLAB_ITEMS, news=NEWS, fairs=None):
+    s = FakeSite()
+    s.set(DENNYS + "/robots.txt", NotFoundError("404"))
+    s.set(D_MENU, S.dennys_menu(fairs) if fairs else S.dennys_menu())
+    s.set(D_OIMO, S.dennys_fair("蜜いもデザート", oimo))
+    s.set(D_COLLAB, S.dennys_fair("飯田商店監修「味噌らぁ麺」", collab))
+    s.set(D_NEWS, S.dennys_news(news))
+    return s
+
+
+JOYFULL_ITEMS = [
+    (602, "【2026年12月1日（火）15時より販売】テストハンバーグコンボ", 1299, 1428),
+    (527, "「幻のコショウのチキン竜田」", 939, 1032),
+    (502, "「黒ごまアイスのパフェ」", 769, 845),
+]
+JOYFULL_FAIRS = {602: "「ジョイフル×テスト」コラボメニュー", 527: "世界の山ちゃんフェア", 502: "世界の山ちゃんフェア"}
+JOYFULL_NEWS = [(99, "2026.10.02", "【ジョイフル】「世界の山ちゃんフェア」2026年10月13日（火）15時より販売開始!!")]
+
+
+def joyfull_site(items=JOYFULL_ITEMS, fairs=None, news=JOYFULL_NEWS):
+    fairs = JOYFULL_FAIRS if fairs is None else fairs
+    s = FakeSite()
+    s.set(JOYFULL + "/robots.txt", "User-agent: *\nDisallow:\n")
+    s.set(JF_LIST, S.joyfull_list(items))
+    for pid, name, ex, inc in items:
+        if pid in fairs:
+            s.set(JOYFULL + f"/menu/{pid}", S.joyfull_detail(fairs[pid], name))
+    s.set(JF_NEWS, S.joyfull_news(news))
+    return s
+
+
+def jonathan_site(fair_alt=S.JONATHAN_FAIR_ALT, dessert_alt=None, slugs=("collab", "fair", "dessert", "drink_bar")):
+    s = FakeSite()
+    s.set(SKY + "/robots.txt", "User-agent: *\nAllow: /\nDisallow: /company/\n")
+    s.set(J_TOP, S.jonathan_top(slugs))
+    s.set(J_FAIR, S.jonathan_page("秋のよくばりマルシェ", [fair_alt]))
+    dessert_alt = dessert_alt or S.alt(("季節のジョナパフェ（早生みかん）", 999, 1099))
+    s.set(J_DESSERT, S.jonathan_page("しあわせ早生みかん", [dessert_alt]))
+    return s
+
+
+def ids(chain):
+    return sorted(p["product_id"] for p in crawl.load_chain_products(chain))
+
+
 class TestConfig(unittest.TestCase):
     def test_user_agent_is_plain_and_honest(self):
         self.assertEqual(crawl.UA, "FamiresPochi/1.0 (+https://famires.netaful.jp/)")
@@ -126,11 +184,11 @@ class TestConfig(unittest.TestCase):
 
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
-        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20})
-        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15})
+        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan", "joyfull"])
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25})
+        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
-        for c in ("dennys", "jonathan", "cocos", "bigboy"):
+        for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull"):
             self.assertGreaterEqual(cfg["request_interval_seconds"][c], 3)
 
     def test_site_identity_and_ads(self):
@@ -638,6 +696,147 @@ class TestBigboyCrawl(unittest.TestCase):
         self.assertEqual(crawl.burst_threshold("bigboy", 100), 60)
 
 
+class TestJoyfullCrawl(unittest.TestCase):
+    def test_first_run_records_all_with_facts_only(self):
+        with TempData():
+            site = joyfull_site()
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertTrue(st["joyfull"]["list_ok"])
+            self.assertEqual(ids("joyfull"), ["502", "527", "602"])
+            p = helpers.prod("joyfull", "527")
+            self.assertEqual((p["name"], p["price"], p["price_excl_tax"]), ("「幻のコショウのチキン竜田」", 1032, 939))
+            self.assertEqual(p["fair"], "世界の山ちゃんフェア")
+            self.assertEqual(p["official_url"], JOYFULL + "/menu/527")
+            self.assertEqual(p["price_history"], [{"date": "2026-11-23", "price": 1032}])
+            self.assertIn("関東エリア店舗", p["stores_note"])
+            for prod_ in crawl.load_chain_products("joyfull"):
+                blob = json.dumps(prod_, ensure_ascii=False)
+                for k in ("image", "photo", "description", "lead", "nutrition", "allergen"):
+                    self.assertNotIn(k, blob)
+
+    def test_launch_from_name_prefix_and_from_fair_name_news(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")
+            collab = helpers.prod("joyfull", "602")
+            self.assertEqual((collab["launch_date"], collab["launch_date_source"]), ("2026-12-01", "official_menu"))
+            self.assertEqual(collab["fair"], "「ジョイフル×テスト」コラボメニュー")
+            # 商品名は見出しに無く、フェア名で照合できたもの
+            p = helpers.prod("joyfull", "527")
+            self.assertEqual((p["launch_date"], p["launch_date_source"]), ("2026-10-13", "official_news_fair"))
+            self.assertEqual(p["news_url"], JOYFULL + "/news/99")
+
+    def test_unmatched_news_leaves_recording_start(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(news=[(1, "2026.11.01", "全く別の発表 11月5日（木）販売開始")]), "2026-11-23")
+            self.assertIsNone(helpers.prod("joyfull", "527")["launch_date"])
+            # 接頭辞の告知がある商品は、ニュースと関係なく開始日が取れる
+            self.assertEqual(helpers.prod("joyfull", "602")["launch_date"], "2026-12-01")
+
+    def test_news_failure_does_not_stop_recording(self):
+        with TempData():
+            site = joyfull_site()
+            site.set(JF_NEWS, RuntimeError("timeout"))
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertTrue(st["joyfull"]["list_ok"])
+            self.assertEqual(len(ids("joyfull")), 3)
+            self.assertIsNone(helpers.prod("joyfull", "527")["launch_date"])
+
+    def test_request_count_within_cap(self):
+        with TempData():
+            site = joyfull_site()
+            run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            # robots・一覧・詳細3・news1
+            self.assertEqual(len(site.calls), 6)
+            self.assertLessEqual(len(site.calls), crawl.CONFIG["max_requests_per_run"]["joyfull"])
+
+    def test_ended_after_two_misses_and_price_change(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")
+            fewer = joyfull_site(items=JOYFULL_ITEMS[:2])
+            run_chain(crawl.crawl_joyfull, fewer, "2026-11-24")
+            run_chain(crawl.crawl_joyfull, fewer, "2026-11-25")
+            p = helpers.prod("joyfull", "502")
+            self.assertEqual((p["status"], p["ended_observed_at"]), ("ended", "2026-11-25"))
+            changed = joyfull_site(items=[JOYFULL_ITEMS[0], (527, "「幻のコショウのチキン竜田」", 999, 1099)])
+            run_chain(crawl.crawl_joyfull, changed, "2026-11-26")
+            p = helpers.prod("joyfull", "527")
+            self.assertEqual(p["price"], 1099)
+            self.assertEqual(p["price_history"][-1], {"date": "2026-11-26", "price": 1099})
+
+    def test_detail_failure_is_incomplete_and_nothing_ends(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")
+            # 記録済みでフェア名のある商品の詳細は取り直さないので、失敗させるのは新規の商品の詳細
+            items = JOYFULL_ITEMS + [(700, "新作テスト", 500, 550)]
+            fairs = {**JOYFULL_FAIRS, 700: "新フェア"}
+            broken = joyfull_site(items=items, fairs=fairs)
+            broken.set(JOYFULL + "/menu/700", NotFoundError("404"))
+            for d in ("2026-11-24", "2026-11-25", "2026-11-26"):
+                _, st = run_chain(crawl.crawl_joyfull, broken, d)
+                self.assertFalse(st["joyfull"]["list_ok"])
+            self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("joyfull")))
+
+    def test_second_run_skips_detail_pages_of_known_products(self):
+        with TempData():
+            site = joyfull_site()
+            run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            site.calls.clear()
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-24")
+            self.assertTrue(st["joyfull"]["list_ok"])
+            for pid in ("502", "527", "602"):
+                self.assertNotIn(JOYFULL + f"/menu/{pid}", site.calls)
+            # 2回目は robots・一覧(newsは開始日が全件そろっているので呼ばれない)だけ
+            self.assertLessEqual(len(site.calls), 3)
+
+    def test_declared_count_mismatch_is_incomplete(self):
+        with TempData():
+            site = joyfull_site()
+            site.set(JF_LIST, S.joyfull_list(JOYFULL_ITEMS).replace("￥939", "価格は店頭で"))
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertFalse(st["joyfull"]["list_ok"])
+            self.assertEqual(ids("joyfull"), ["502", "602"])  # 取れた分は記録される
+
+    def test_list_structure_change_is_list_failed(self):
+        with TempData():
+            site = joyfull_site()
+            site.set(JF_LIST, "<html>変わった</html>")
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertFalse(st["joyfull"]["list_ok"])
+            self.assertEqual(ids("joyfull"), [])
+
+    def test_blocked_stops_without_workaround(self):
+        with TempData():
+            site = joyfull_site()
+            site.set(JOYFULL + "/menu/527", BlockedError("HTTP 403"))
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertTrue(st["joyfull"]["blocked"])
+            self.assertFalse(st["joyfull"]["list_ok"])
+
+    def test_robots_disallow_skips(self):
+        with TempData():
+            site = joyfull_site()
+            site.set(JOYFULL + "/robots.txt", "User-agent: *\nDisallow: /menu\n")
+            run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            self.assertEqual(ids("joyfull"), [])
+            self.assertNotIn(JF_LIST, site.calls)
+
+    def test_burst_guard_holds_a_restructure_but_allows_a_real_fair(self):
+        with TempData():
+            run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")  # baseline: 3件
+            # 本物の新フェア: 新規10件(閾値20以下)は記録される
+            ten = [(700 + i, f"新作テスト{i}", 500, 550) for i in range(10)]
+            fairs = {**JOYFULL_FAIRS, **{700 + i: "新フェア" for i in range(10)}}
+            _, st = run_chain(crawl.crawl_joyfull, joyfull_site(items=JOYFULL_ITEMS + ten, fairs=fairs), "2026-11-24")
+            self.assertEqual(st["joyfull"]["new_products"], 10)
+            # 全件のIDが変わる構造変更(新規25件 > 閾値20)は保留
+            many = [(800 + i, f"別テスト{i}", 500, 550) for i in range(25)]
+            many_fairs = {800 + i: "別フェア" for i in range(25)}
+            pend, st = run_chain(crawl.crawl_joyfull, joyfull_site(items=many, fairs=many_fairs), "2026-11-25")
+            self.assertEqual(st["joyfull"]["new_products"], 0)
+            self.assertFalse(st["joyfull"]["list_ok"])
+            self.assertEqual(pend["joyfull"]["_suspected_restructure"]["threshold"], 20)
+
+
 class TestTouchSeen(unittest.TestCase):
     def new_prod(self, **kw):
         p = crawl.base_product("dennys", "1", "テスト", "2026-11-03T07:00:00+09:00", "2026-11-03")
@@ -698,7 +897,7 @@ class TestHealthAndSummary(unittest.TestCase):
 
     def test_main_rejects_unknown_chain(self):
         self.assertEqual(crawl.main(["starbucks"]), 2)
-        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan"])
+        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan", "joyfull"])
 
     def test_one_chain_exception_does_not_stop_the_other(self):
         def boom(getter, pending, stats, today=None):

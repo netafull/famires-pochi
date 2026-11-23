@@ -100,6 +100,16 @@ class TestItemPage(unittest.TestCase):
         self.assertIn("出典：ジョナサン公式サイト", h)
         self.assertIn("秋のよくばりマルシェ", h)
 
+    def test_joyfull_item(self):
+        it = item(chain="joyfull", pid="527", name="「幻のコショウのチキン竜田」", fair="世界の山ちゃんフェア",
+                  official_url="https://www.joyfull.co.jp/menu/527",
+                  stores_note="関東エリア店舗(東京都・埼玉県・千葉県・群馬県・栃木県・茨城県・福島県)では、メニューや価格が異なる場合があります")
+        h = G.render_item_page(it)
+        self.assertIn("出典：ジョイフル公式サイト", h)
+        self.assertIn("世界の山ちゃんフェア", h)
+        self.assertIn("関東エリア店舗", h)
+        self.assertIn('href="https://www.joyfull.co.jp/menu/527"', h)
+
     def test_cocos_item(self):
         it = item(chain="cocos", pid="limited_sweets-roasted_sweet_potato_crepe2611", name="勤労感謝の芋栗かぼちゃクレープ",
                   fair="ココスの期間限定スイーツ",
@@ -138,16 +148,19 @@ class TestSameName(unittest.TestCase):
 class TestLists(unittest.TestCase):
     def setUp(self):
         self.items = [item(), item(pid="p2", name="おいもプリン", price=None),
-                      item(chain="jonathan", pid="fair-1", name="とろサーモン＆いくら丼", fair="秋のよくばりマルシェ")]
+                      item(chain="jonathan", pid="fair-1", name="とろサーモン＆いくら丼", fair="秋のよくばりマルシェ"),
+                      item(chain="joyfull", pid="527", name="「幻のコショウのチキン竜田」", fair="世界の山ちゃんフェア",
+                           official_url="https://www.joyfull.co.jp/menu/527")]
 
     def test_top_groups_by_chain_and_has_no_kcal_sort(self):
         h = G.render_top(self.items)
         self.assertIn("デニーズ (", h)
         self.assertIn("ジョナサン (", h)
+        self.assertIn("ジョイフル (", h)
         self.assertNotIn("カロリー順", h)
         self.assertEqual(len(re.findall(r"<h1[ >]", h)), 1)
         self.assertIn('"name": "ファミレスポチ"', h)
-        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイの期間限定メニュー記録</title>", h)
+        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの期間限定メニュー記録</title>", h)
 
     def test_card_has_no_image_besides_category_icon(self):
         for m in re.finditer(r"<img[^>]+>", G.render_card(self.items[0])):
@@ -167,7 +180,7 @@ class TestLists(unittest.TestCase):
 
     def test_search_index(self):
         idx = G.build_search_index(self.items)
-        self.assertEqual({i["c"] for i in idx}, {"dennys", "jonathan"})
+        self.assertEqual({i["c"] for i in idx}, {"dennys", "jonathan", "joyfull"})
 
 
 class TestSiteFiles(unittest.TestCase):
@@ -177,6 +190,7 @@ class TestSiteFiles(unittest.TestCase):
         self.assertIn("https://famires.netaful.jp/items/dennys-dessert-sweet-potato-sundae.html", x)
         self.assertIn("<lastmod>2026-11-23</lastmod>", x)
         self.assertIn("https://famires.netaful.jp/chains/jonathan/", x)
+        self.assertIn("https://famires.netaful.jp/chains/joyfull/", x)
         self.assertIn("Sitemap: https://famires.netaful.jp/sitemap.xml", G.generate_robots())
 
     def test_main_writes_everything_to_a_temp_docs(self):
@@ -226,6 +240,7 @@ class TestChainColors(unittest.TestCase):
         self.assertIn("--jonathan: #1B5E20", css)
         self.assertIn("--cocos: #E65100", css)
         self.assertIn("--cocos: #FFB74D", css)
+        self.assertIn("--joyfull: #6A1B9A", css)
         self.assertIn("prefers-color-scheme: dark", css)
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココス・ビッグボーイの期間限定フェアメニューを巡回し、
-data/products/{dennys|jonathan|cocos|bigboy}/{id}.json に1商品1ファイルで蓄積する。
+"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの期間限定フェアメニューを巡回し、
+data/products/{dennys|jonathan|cocos|bigboy|joyfull}/{id}.json に1商品1ファイルで蓄積する。
 
 このサイトの核は「販売状況の追跡」。公式サイトはフェアが終わると商品を消すので、
 一覧に居た商品が消えたら終了とみなして記録を残す(カフェポチ・ファストフードポチと同じ設計)。
@@ -1096,6 +1096,132 @@ def crawl_cocos(getter, pending: dict, stats: dict, today: str | None = None) ->
 
 
 # ---------------------------------------------------------------------------
+# ジョイフル
+# ---------------------------------------------------------------------------
+
+JOYFULL_BASE = parsers.JOYFULL_BASE
+JOYFULL_STORES_NOTE = "関東エリア店舗(東京都・埼玉県・千葉県・群馬県・栃木県・茨城県・福島県)では、メニューや価格が異なる場合があります"
+
+
+def crawl_joyfull(getter, pending: dict, stats: dict, today: str | None = None) -> None:
+    """ジョイフル: 「季節・期間限定」の一覧(/menu?category=19)から商品名・価格(全角￥の税抜＋税込併記)を、
+    商品ページ(/menu/<数値ID>)のパンくずからフェア名を取る。識別キーは商品ページの数値ID。
+    商品ページは、まだ記録していない商品と、フェア名が保存されていない既存商品だけ取る
+    (記録済みでフェア名のある商品は保存済みのフェア名を使う。フェア名はほぼ変わらないので、
+    毎日の取得を減らし、件数が増えたときに上限へ当たって不完全扱いになる詰まりも防ぐ)。
+    一覧の枠が無い・0件の回、表示件数(該当件数)より取れた商品が少ない回、取るべき商品ページが
+    取れない・パンくずが読めない回は「一覧が不完全(構造変更の疑い)」として終了判定をしない。
+    開始日は、まず商品名の先頭の告知「【YYYY年M月D日(曜)H時より販売】」(年まで含む一次情報)、
+    次にお知らせ(メニュー分類)の見出しを商品名・フェア名で照合できたときだけ使う。取れなければ記録開始日。"""
+    chain = "joyfull"
+    run = Run(chain, pending, stats, today)
+    st, today, now = run.st, run.today, run.now
+    robots = Robots(getter, chain, st)
+    complete = True
+    entries: dict[str, dict] = {}
+    try:
+        if not robots.allowed(JOYFULL_BASE, parsers.JOYFULL_LIST_PATH):
+            print("[skip] joyfull: robots.txtでDisallow", file=sys.stderr)
+            return
+        html = getter(chain, JOYFULL_BASE + parsers.JOYFULL_LIST_PATH)
+        st["list_requests"] += 1
+        try:
+            page = parsers.parse_joyfull_category(html)
+        except ValueError as e:
+            print(f"[warn] joyfull {e}", file=sys.stderr)
+            return
+        if not page["items"]:
+            print("[warn] joyfull: 商品が0件(構造変更の疑い。この回は終了判定をしない)", file=sys.stderr)
+            return
+        if page["declared_count"] is not None and len(page["items"]) < page["declared_count"]:
+            print(f"[warn] joyfull: 表示{page['declared_count']}件のうち{len(page['items'])}件しか価格が取れない"
+                  "(構造変更の疑い)", file=sys.stderr)
+            complete = False
+        for it in page["items"]:
+            url = JOYFULL_BASE + it["link"]
+            saved = load_product(chain, it["pid"])
+            if saved is not None and saved.get("fair"):
+                # 記録済みでフェア名も保存されている商品は、商品ページを取り直さない
+                # (モルのレビュー指摘、2026-11-23)
+                fair = saved["fair"]
+            else:
+                if not robots.allowed(JOYFULL_BASE, it["link"]):
+                    complete = False
+                    continue
+                try:
+                    detail = getter(chain, url)
+                    st["detail_requests"] += 1
+                    fair = parsers.parse_joyfull_detail(detail)["fair"]
+                except BlockedError:
+                    raise
+                except Exception as e:  # noqa: BLE001  取得失敗・構造変更
+                    print(f"[warn] joyfull 商品 {it['link']}: {e}", file=sys.stderr)
+                    complete = False
+                    continue
+            entries[it["pid"]] = {
+                "pid": it["pid"], "name": it["name"], "price": it["price"], "price_max": None,
+                "price_excl_tax": it["price_excl_tax"], "fair": fair,
+                "listed_launch": it["listed_launch"], "official_url": url,
+            }
+    except BlockedError as e:
+        run.block("list", e)
+        return
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] joyfull 一覧取得失敗: {e}", file=sys.stderr)
+        return
+
+    all_names = [e["name"] for e in entries.values()]
+
+    def news_loader():
+        if not robots.allowed(JOYFULL_BASE, parsers.JOYFULL_NEWS_PATH):
+            return []
+        got = parsers.parse_joyfull_news(getter(chain, JOYFULL_BASE + parsers.JOYFULL_NEWS_PATH))
+        st["detail_requests"] += 1
+        return [{"title": n["title"], "text": "", "date": n["date"], "url": n["url"]} for n in got]
+
+    news = PressSources(news_loader)
+
+    def build(e):
+        p = base_product(chain, e["pid"], e["name"], now, today)
+        p["fair"] = e["fair"]
+        p["limited_kind"] = "フェア"
+        p["price_excl_tax"] = e["price_excl_tax"]
+        p["price_note"] = "税込。税抜は公式サイトの表示"
+        set_initial_price(p, e["price"], None, today)
+        p["official_url"] = e["official_url"]
+        p["stores_note"] = JOYFULL_STORES_NOTE
+        p["source_list"] = ["www.joyfull.co.jp/menu?category=19"]
+        return p
+
+    def refresh(p, e):
+        if e["fair"]:
+            p["fair"] = e["fair"]
+        p["price_excl_tax"] = e["price_excl_tax"]
+
+    def enrich(p, e, is_new):
+        if not (needs_launch(p) and (is_new or int(p.get("launch_search_runs") or 0) < LAUNCH_SEARCH_RUNS_MAX)):
+            return
+        if e.get("listed_launch"):
+            # 商品名の先頭の告知(公式の一覧の表示そのもの)が最も確かな一次情報
+            p["launch_date"] = e["listed_launch"]
+            p["launch_date_source"] = "official_menu"
+            return
+        hit = find_launch(p["name"], news.get(), launch_ref(p), all_names)
+        if hit is None and p.get("fair"):
+            hit = find_launch(p["fair"], news.get(), launch_ref(p), [])
+            if hit:
+                hit["via"] = "fair"  # フェア名での照合(商品ごとの開始日とずれることがある扱い)
+        if hit:
+            apply_launch(p, hit, "official_news")
+            if hit.get("via") == "fair":
+                p["launch_date_source"] = "official_news_fair"
+        else:
+            p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
+
+    run.finish(entries, complete, build, refresh, enrich)
+
+
+# ---------------------------------------------------------------------------
 # 実行
 # ---------------------------------------------------------------------------
 
@@ -1166,7 +1292,7 @@ def save_run_summary(stats: dict[str, dict], streaks: dict[str, int] | None = No
     RUN_SUMMARY.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
 
-CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos, "bigboy": crawl_bigboy}
+CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos, "bigboy": crawl_bigboy, "joyfull": crawl_joyfull}
 
 
 def main(argv: list[str] | None = None) -> int:
