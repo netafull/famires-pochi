@@ -1,0 +1,37 @@
+{
+ "chain": "steakdon",
+ "product_id": "1637",
+ "name": "ほろ苦 マロンパフェ",
+ "category": null,
+ "fair": "フェアメニュー",
+ "price": 649,
+ "price_excl_tax": 590,
+ "price_max": null,
+ "price_note": "税込。税抜は公式サイトの表示",
+ "price_variants": null,
+ "launch_date": null,
+ "launch_date_source": null,
+ "news_title": null,
+ "news_url": null,
+ "news_date": null,
+ "listed_at": null,
+ "planned_end_text": null,
+ "limited_kind": "フェア",
+ "stores_note": null,
+ "official_url": "https://www.steak-don.jp/fmenu_detail.html?fmenu_item_id=1637",
+ "first_seen_at": "2026-11-23T21:50:00+09:00",
+ "last_seen_at": "2026-11-23",
+ "status": "on_sale",
+ "ended_observed_at": null,
+ "missed_runs": 0,
+ "price_history": [
+  {
+   "date": "2026-11-23",
+   "price": 649
+  }
+ ],
+ "launch_search_runs": 1,
+ "source_list": [
+  "www.steak-don.jp/fmenu_list.html?fmenu_categ_id=94"
+ ]
+}
