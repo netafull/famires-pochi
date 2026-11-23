@@ -185,7 +185,7 @@ class TestConfig(unittest.TestCase):
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
         self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan", "joyfull"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 40})
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25})
         self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
         for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull"):
@@ -766,12 +766,27 @@ class TestJoyfullCrawl(unittest.TestCase):
     def test_detail_failure_is_incomplete_and_nothing_ends(self):
         with TempData():
             run_chain(crawl.crawl_joyfull, joyfull_site(), "2026-11-23")
-            broken = joyfull_site()
-            broken.set(JOYFULL + "/menu/527", NotFoundError("404"))
+            # 記録済みでフェア名のある商品の詳細は取り直さないので、失敗させるのは新規の商品の詳細
+            items = JOYFULL_ITEMS + [(700, "新作テスト", 500, 550)]
+            fairs = {**JOYFULL_FAIRS, 700: "新フェア"}
+            broken = joyfull_site(items=items, fairs=fairs)
+            broken.set(JOYFULL + "/menu/700", NotFoundError("404"))
             for d in ("2026-11-24", "2026-11-25", "2026-11-26"):
                 _, st = run_chain(crawl.crawl_joyfull, broken, d)
                 self.assertFalse(st["joyfull"]["list_ok"])
             self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("joyfull")))
+
+    def test_second_run_skips_detail_pages_of_known_products(self):
+        with TempData():
+            site = joyfull_site()
+            run_chain(crawl.crawl_joyfull, site, "2026-11-23")
+            site.calls.clear()
+            _, st = run_chain(crawl.crawl_joyfull, site, "2026-11-24")
+            self.assertTrue(st["joyfull"]["list_ok"])
+            for pid in ("502", "527", "602"):
+                self.assertNotIn(JOYFULL + f"/menu/{pid}", site.calls)
+            # 2回目は robots・一覧(newsは開始日が全件そろっているので呼ばれない)だけ
+            self.assertLessEqual(len(site.calls), 3)
 
     def test_declared_count_mismatch_is_incomplete(self):
         with TempData():

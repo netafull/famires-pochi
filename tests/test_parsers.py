@@ -347,6 +347,12 @@ class TestJoyfullCategory(unittest.TestCase):
         self.assertEqual(first["link"], "/menu/602")
         self.assertIsNone(page["items"][1]["listed_launch"])
 
+    def test_listed_launch_prefix_is_stripped_from_name(self):
+        page = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))
+        first = page["items"][0]
+        self.assertEqual(first["name"], "テストハンバーグ")
+        self.assertEqual(first["listed_launch"], "2026-12-01")
+
     def test_ids_are_stable_across_runs(self):
         a = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
         b = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
