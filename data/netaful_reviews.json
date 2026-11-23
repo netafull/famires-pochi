@@ -323,9 +323,47 @@
     },
     "title": "ジョナサンは焼酎ミニボトルにドリンクバーが付いて499円、一品250円のつまみもあって「せんべろ」に最高ではないか？"
    }
+  ],
+  "joyfull": [
+   {
+    "date": "2017-04-26T14:00:00",
+    "id": 55204,
+    "link": "https://netaful.jp/game/055204.html",
+    "product_name": "ジョイフル",
+    "thumb": {
+     "height": 220,
+     "url": "https://netaful.jp/wp-content/uploads/2017/04/2017-04-26_1425-1-300x220.jpg",
+     "width": 300
+    },
+    "title": "【ポケモンGO】ファミレス「ジョイフル」がポケストップ・ジムに！"
+   },
+   {
+    "date": "2016-09-03T18:00:00",
+    "id": 53755,
+    "link": "https://netaful.jp/family-restaurant/053755.html",
+    "product_name": "ジョイフル",
+    "thumb": {
+     "height": 225,
+     "url": "https://netaful.jp/wp-content/uploads/2016/09/joyfull-yashio-7785-1-300x225.jpg",
+     "width": 300
+    },
+    "title": "「ジョイフル」大分発祥のファミレスでとり天定食を食す（八潮店）"
+   },
+   {
+    "date": "2014-11-27T16:00:00",
+    "id": 48706,
+    "link": "https://netaful.jp/eat/048706.html",
+    "product_name": "ジョイフル",
+    "thumb": {
+     "height": 201,
+     "url": "https://netaful.jp/wp-content/uploads/2014/11/2014-11-27_1504-1-300x201.jpg",
+     "width": 300
+    },
+    "title": "ファミレス「ジョイフル」2014年12月より値上げ"
+   }
   ]
  },
  "errors": [],
- "fetched_at": "2026-11-23T19:56:13+09:00",
+ "fetched_at": "2026-11-23T20:52:53+09:00",
  "matches": {}
 }
