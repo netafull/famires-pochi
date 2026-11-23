@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ファミレスポチ｜デニーズ・ジョナサンの期間限定メニュー記録</title>
+<meta name="description" content="デニーズ・ジョナサンの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。">
+<link rel="canonical" href="https://famires.netaful.jp/">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-D8F2T2XB5W"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-D8F2T2XB5W');</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2195959398357532" crossorigin="anonymous"></script>
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="ファミレスポチ｜デニーズ・ジョナサンの期間限定メニュー記録">
+<meta property="og:description" content="デニーズ・ジョナサンの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。">
+<meta property="og:url" content="https://famires.netaful.jp/">
+<meta property="og:site_name" content="ファミレスポチ">
+<meta property="og:locale" content="ja_JP">
+
+<style>
+:root {
+  --bg: #faf7f4; --card: #ffffff; --text: #1f1a17; --muted: #6f655f;
+  --accent: #C62828; --line: #e7dfd8;
+  --dennys: #B71C1C;
+  --jonathan: #1B5E20;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #17130f; --card: #221c17; --text: #efe8e2; --muted: #a79d95;
+    --line: #38302a; --accent: #EF9A9A;
+    --dennys: #EF9A9A;
+    --jonathan: #81C784; }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text);
+  font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.6; }
+a { color: inherit; }
+header { padding: 24px 16px 12px; max-width: 980px; margin: 0 auto; }
+header h1 a { text-decoration: none; font-size: 22px;
+  display: inline-flex; align-items: center; gap: 8px; }
+/* ロゴは文字とほぼ同じ高さに揃える(96px画像を縮小して表示。姉妹サイトと同じ) */
+header h1 img { width: 44px; height: 44px; }
+/* トップ以外ではサイト名をh1にしない(ページごとのh1は1つ)。見た目はh1のときと同じにする */
+header .site-title { font-size: 2em; font-weight: 700; }
+header .site-title a { text-decoration: none; font-size: 22px;
+  display: inline-flex; align-items: center; gap: 8px; }
+header .site-title img { width: 44px; height: 44px; }
+header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+nav.crumbs { font-size: 12px; color: var(--muted); margin-top: 8px; }
+nav.crumbs a { text-decoration: none; color: var(--accent); }
+.sites { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.sites .lbl { font-size: 12px; color: var(--muted); }
+.sites a { font-size: 12px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); text-decoration: none; }
+main { max-width: 980px; margin: 0 auto; padding: 8px 16px 48px; }
+h2, h1.pt { font-size: 18px; padding-left: 10px; border-left: 4px solid var(--accent); margin: 24px 0 12px; }
+.sort-bar { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; align-items: center; }
+.sort-bar select, .sort-bar input { font-size: 13px; padding: 5px 8px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); font-family: inherit; }
+.chain-group h3 { font-size: 15px; margin: 18px 0 8px; padding-left: 8px; border-left: 4px solid var(--line); }
+.grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.item { display: block; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 12px; text-decoration: none; }
+.item:hover { border-color: var(--accent); }
+.item .badge { display: inline-block; font-size: 10px; font-weight: 700; color: #fff;
+  border-radius: 4px; padding: 1px 6px; margin-bottom: 6px; }
+.item .st { display: inline-block; font-size: 10px; border-radius: 4px; padding: 0 6px; margin-left: 6px;
+  border: 1px solid var(--line); color: var(--muted); }
+.item .st-on { color: var(--accent); border-color: var(--accent); }
+.item[data-status="ended"] { opacity: .82; }
+.item .t { font-size: 14px; font-weight: 600; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.item .price { margin-top: 6px; font-size: 13px; }
+.item .meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.monthlist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.monthlist a { text-decoration: none; padding: 10px 14px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+.monthlist a:hover { border-color: var(--accent); }
+.monthlist .n { color: var(--muted); font-size: 12px; margin-left: 8px; }
+.chainlist { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.chainlist a { text-decoration: none; padding: 8px 16px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); font-size: 13px; }
+.detail { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; margin-top: 12px; }
+.detail h1 { font-size: 20px; margin-bottom: 8px; }
+.chain-badge { display: inline-block; font-size: 11px; font-weight: 700; color: #fff;
+  border-radius: 4px; padding: 2px 8px; }
+.detail .price { font-size: 18px; font-weight: 700; margin: 8px 0; }
+.detail .price small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.detail table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+.detail table th, .detail table td { border-bottom: 1px solid var(--line); text-align: left;
+  padding: 6px 4px; }
+.detail table th { color: var(--muted); font-weight: 500; width: 40%; }
+.detail .tablewrap { overflow-x: auto; }
+.detail table.multi th, .detail table.multi td { width: auto; text-align: right; white-space: nowrap; }
+.detail table.multi th:first-child { text-align: left; }
+.detail table.pv { max-width: 320px; }
+.detail table.facts { max-width: 420px; margin-bottom: 4px; }
+.detail h3 { margin-top: 16px; font-size: 14px; }
+/* 商品ページの節見出しはh2。以前のh3と同じ見た目にする */
+.detail h2 { margin: 16px 0 0; font-size: 14px; padding: 0; border: 0; }
+.detail h1 .sub { font-size: 13px; font-weight: 500; color: var(--muted); }
+.detail ul.rel { list-style: none; margin-top: 6px; font-size: 13px; }
+.detail ul.rel li { border-bottom: 1px solid var(--line); padding: 6px 4px; }
+.detail ul.rel a { color: var(--accent); text-decoration: none; }
+.detail ul.rel .m { color: var(--muted); font-size: 12px; margin-left: 8px; }
+.detail details { margin-top: 10px; font-size: 13px; }
+.detail details summary { cursor: pointer; color: var(--accent); }
+.detail blockquote { border-left: 3px solid var(--accent); margin: 12px 0; padding: 8px 14px;
+  color: var(--text); background: var(--bg); border-radius: 4px; font-size: 14px; }
+.detail .source { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.detail .warn { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.detail .note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.tags span { font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+.searchbox { margin: 16px 0; }
+.searchbox input { width: 100%; font-size: 14px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); font-family: inherit; }
+footer { max-width: 980px; margin: 0 auto; padding: 16px; color: var(--muted); font-size: 12px;
+  border-top: 1px solid var(--line); }
+.about { max-width: 980px; margin: 40px auto 0; padding: 20px 16px 0; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 13px; line-height: 1.9; }
+.about h2 { font-size: 14px; border-left-width: 3px; margin-bottom: 8px; color: var(--text); }
+.about p { margin-top: 8px; }
+.about a { color: var(--accent); }
+.empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+.item .review-badge { display: inline-block; margin-top: 4px; font-size: 10px; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 4px; padding: 0 5px; }
+.review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px; margin-top: 8px; }
+.review-card { display: block; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; text-decoration: none; color: inherit; }
+.review-card:hover { border-color: var(--accent); }
+.review-card img { width: 100%; height: 110px; object-fit: cover; display: block; background: var(--line); }
+.review-card .rc-body { padding: 8px 10px; }
+.review-card .rc-t { font-size: 12.5px; font-weight: 600; display: -webkit-box;
+  -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.review-card .rc-date { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.detail .review-grid { margin-top: 4px; }
+@media (max-width: 480px) {
+  .review-grid { grid-template-columns: repeat(2, 1fr); }
+}
+/* 手動のAdSense広告枠(Auto adsは使わない)。設定が空の間は何も出力しない。
+   width:100%指定必須: グリッドやflexの中で幅が0に潰れるとAdSenseが配信に失敗する。
+   overflow:hiddenは付けない。未充填だけ畳む */
+.ad-slot { width: 100%; max-width: 960px; margin: 16px auto; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
+.ad-slot:has(ins[data-ad-status="unfilled"]) { display: none; }
+/* カード一覧(.grid)の中に差し込まれる枠は、カード1枚ぶんのマス(列幅)を使う */
+.grid > .ad-slot { max-width: none; margin: 0; }
+/* 2026-11-18 カードのカテゴリアイコン（ドット絵32px）。元の32マスの倍数で出すと点がそろう */
+.cat-icon { width: 48px; height: 48px; flex-shrink: 0; image-rendering: pixelated; }
+.item:has(> .cat-icon) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: start; }
+.item-body { min-width: 0; }
+.detail h1.with-icon { display: flex; align-items: center; gap: 12px; }
+.detail h1.with-icon .h1-text { min-width: 0; }
+@media (min-width: 700px) {
+  .cat-icon { width: 64px; height: 64px; }
+  .grid:has(.cat-icon) { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+}
+.chain-group[data-chain="dennys"] h3 { border-color: var(--dennys); }
+.item[data-chain="dennys"] .badge { background: var(--dennys); }
+.chain-group[data-chain="jonathan"] h3 { border-color: var(--jonathan); }
+.item[data-chain="jonathan"] .badge { background: var(--jonathan); }
+@media (prefers-color-scheme: dark) { .item .badge, .chain-badge { color: #17130f; } }
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "ファミレスポチ", "alternateName": ["Famires Pochi"], "url": "https://famires.netaful.jp/"}</script>
+</head>
+<body>
+<header>
+<h1><a data-google-vignette="false" href="/">ファミレスポチ</a></h1>
+<p>デニーズ・ジョナサンの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。 ｜ 最終更新: 2026年11月23日 14:22</p>
+</header>
+<div class="ad-slot">
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-2195959398357532"
+     data-ad-slot="1215675017"
+     data-ad-format="rectangle"
+     data-full-width-responsive="true"></ins>
+</div>
+<main>
+<div class="chainlist">
+<a data-google-vignette="false" href="/chains/dennys/">デニーズ</a>
+<a data-google-vignette="false" href="/chains/jonathan/">ジョナサン</a>
+</div>
+<h2>メニュー名で検索</h2>
+<div class="searchbox"><input id="search-input" type="search"
+placeholder="メニュー名で検索（例: さつまいも、ハンバーグ、パフェ）"></div>
+<div class="grid" id="search-results"></div>
+
+<script>
+(function () {
+  var box = document.getElementById('search-input');
+  var results = document.getElementById('search-results');
+  if (!box || !results) return;
+  var index = null;
+  box.addEventListener('input', function () {
+    var q = box.value.trim();
+    if (!q) { results.innerHTML = ''; return; }
+    function render() {
+      var lower = q.toLowerCase();
+      var hits = index.filter(function (it) {
+        return it.n.toLowerCase().indexOf(lower) !== -1;
+      }).slice(0, 50);
+      results.innerHTML = hits.map(function (it) {
+        return '<a data-google-vignette="false" class="item" data-chain="' + it.c + '" href="' + it.u + '">' +
+          '<div class="badge">' + it.cn + '</div><div class="t">' + it.n +
+          '</div><div class="meta">' + (it.d || '') + (it.s === 'ended' ? '　終了' : '') + '</div></a>';
+      }).join('');
+    }
+    if (index) { render(); return; }
+    fetch('/search-index.json').then(function (r) { return r.json(); }).then(function (data) {
+      index = data; render();
+    });
+  });
+})();
+</script>
+
+<h2>ネタフルの最新レビュー</h2>
+<div class="review-grid">
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/magazine/0147816.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2024/03/dennys-fan-book-485x686.jpg" alt="江口寿史インタビュー＆29枚のクーポンつきデニーズのファンブック「Denny’sぴあ 2024～50周年記念ファンブック～」発売" loading="lazy" width="485" height="686">
+<div class="rc-body">
+<div class="rc-t">江口寿史インタビュー＆29枚のクーポンつきデニーズのファンブック「Denny’sぴあ 2024～50周年記念ファンブック～」発売</div>
+<div class="rc-date">2024-03-24</div>
+</div>
+</a>
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/apple/0115015.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2022/07/51WbR9eLwOL._SL500.jpg" alt="ジョナサン・アイブ、Appleのコンサルティングを終了" loading="lazy" width="337" height="500">
+<div class="rc-body">
+<div class="rc-t">ジョナサン・アイブ、Appleのコンサルティングを終了</div>
+<div class="rc-date">2022-07-13</div>
+</div>
+</a>
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/magazine/0111277.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2022/04/61SdrRrlUJL._SL500.jpg" alt="デニーズ初のファンブック「Denny’sぴあ 2022」24枚のクーポン付きで4月8日発売" loading="lazy" width="354" height="500">
+<div class="rc-body">
+<div class="rc-t">デニーズ初のファンブック「Denny’sぴあ 2022」24枚のクーポン付きで4月8日発売</div>
+<div class="rc-date">2022-04-04</div>
+</div>
+</a>
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/neta-eat/0109002.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2022/02/jonathan-chicken-02000-300x146.jpg" alt="【ジョナサン】テイクアウト限定で「タンドリーチキン＆メキシカンピラフ」がワンコイン税込500円で販売中！（2/9まで）" loading="lazy" width="300" height="146">
+<div class="rc-body">
+<div class="rc-t">【ジョナサン】テイクアウト限定で「タンドリーチキン＆メキシカンピラフ」がワンコイン税込500円で販売中！（2/9まで）</div>
+<div class="rc-date">2022-02-03</div>
+</div>
+</a>
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/neta-eat/0106439.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2021/11/jona-bal-20000-300x146.jpg" alt="【ジョナサン】前菜とワインを充実させた「ジョナバル」が11月18日より復活" loading="lazy" width="300" height="146">
+<div class="rc-body">
+<div class="rc-t">【ジョナサン】前菜とワインを充実させた「ジョナバル」が11月18日より復活</div>
+<div class="rc-date">2021-11-20</div>
+</div>
+</a>
+<a data-google-vignette="false" class="review-card" href="https://netaful.jp/neta-eat/0105057.html" target="_blank" rel="noopener">
+<img src="https://netaful.jp/wp-content/uploads/2021/10/motteco-bag-13000-300x225.jpg" alt="食べきれなかった分を持ち帰るフードロス削減の取り組み「mottECO（モッテコ）」東京都内のデニーズ全店に拡大" loading="lazy" width="300" height="225">
+<div class="rc-body">
+<div class="rc-t">食べきれなかった分を持ち帰るフードロス削減の取り組み「mottECO（モッテコ）」東京都内のデニーズ全店に拡大</div>
+<div class="rc-date">2021-10-13</div>
+</div>
+</a>
+</div>
+<h2>販売中の期間限定メニュー (34件)</h2>
+<div class="sort-bar">
+<label>並び替え: <select id="sort-select"><option value="date">開始日順</option></select></label>
+<label>販売状況: <select id="status-filter"><option value="on_sale" selected>販売中</option><option value="ended">終了</option><option value="all">すべて</option></select></label>
+<label>絞り込み: <select id="chain-filter"><option value="all">すべて</option><option value="dennys">デニーズ</option><option value="jonathan">ジョナサン</option></select></label>
+</div>
+<section class="chain-group" data-chain="dennys">
+<h3>デニーズ (<span class="cnt">20</span>件)</h3>
+<div class="grid" data-sortable>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-1d951cf482.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">辛味噌チャーシューらぁ麺</div>
+  <div class="price">2,497円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-5fb057e02c.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sozai.svg" width="32" height="32" alt="惣菜・揚げ物" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">麻婆牡蠣＆豆腐</div>
+  <div class="price">759円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-60e1bcc42b.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">ニラともやしのシャキシャキ焼き～チャーシュー添え</div>
+  <div class="price">693円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-6c873b5743.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">辛味噌らぁ麺＋焼き餃子（2個）セット</div>
+  <div class="price">1,991円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-a8d3b2acd6.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sozai.svg" width="32" height="32" alt="惣菜・揚げ物" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">焼き餃子（2個）～柚子胡椒＆胡麻油</div>
+  <div class="price">429円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-b40df9b0af.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">ニラともやしのシャキシャキ焼き</div>
+  <div class="price">495円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-b41a555855.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">味噌チャーシューらぁ麺・改～五重の味噌</div>
+  <div class="price">2,398円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-d04e4bd407.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">辛味噌チャーシューらぁ麺＋焼き餃子（2個）セット</div>
+  <div class="price">2,893円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-dd05f24ba8.html"
+   data-date="2026-11-23" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">味噌チャーシューらぁ麺・改～五重の味噌＋焼き餃子（2個）セット</div>
+  <div class="price">2,794円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-caramelized-sweet-potato.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/ice.svg" width="32" height="32" alt="アイス" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものキャラメリゼ～バニラアイス添え</div>
+  <div class="price">330円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-brulee-pancakes.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものブリュレパンケーキ（パンケーキ4枚）</div>
+  <div class="price">1,078円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-ice-cream-azuki-bean-with-sugar-syrup-jelly.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/ice.svg" width="32" height="32" alt="アイス" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">さつまいもアイスとあずきの白蜜ゼリー</div>
+  <div class="price">363円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-mini-mini-parfait-with-mitarashi-sauce.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものちょこっとすぎるみたらしパルフェ</div>
+  <div class="price">418円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-mini-parfait.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものちょこっとパルフェ</div>
+  <div class="price">583円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-parfait.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものパルフェ</div>
+  <div class="price">748円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-pudding.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">おいもプリン</div>
+  <div class="price">330円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-dessert-sweet-potato-sundae.html"
+   data-date="2026-10-28" data-chain="dennys" data-status="on_sale">
+  <div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">蜜いものザ・サンデー～紅天使使用</div>
+  <div class="price">1,969円（税込）</div>
+  <div class="meta">2026-10-28〜 販売中・蜜いもデザート</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-10cecbfd5d.html"
+   data-date="2026-10-14" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">味噌らぁ麺・改～五重の味噌＋焼き餃子（2個）セット</div>
+  <div class="price">1,892円（税込）</div>
+  <div class="meta">2026-10-14〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-4b2a681e04.html"
+   data-date="2026-10-14" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">味噌らぁ麺・改～五重の味噌</div>
+  <div class="price">1,496円（税込）</div>
+  <div class="meta">2026-10-14〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/dennys-collaboration17-54941380c5.html"
+   data-date="2026-10-14" data-chain="dennys" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/noodles.svg" width="32" height="32" alt="麺" loading="lazy" decoding="async"><div class="item-body"><div class="badge">デニーズ</div><span class="st st-on">販売中</span>
+  <div class="t">辛味噌らぁ麺</div>
+  <div class="price">1,595円（税込）</div>
+  <div class="meta">2026-10-14〜 販売中・飯田商店監修「味噌らぁ麺」</div>
+  </div>
+</a>
+</div>
+</section>
+<section class="chain-group" data-chain="jonathan">
+<h3>ジョナサン (<span class="cnt">14</span>件)</h3>
+<div class="grid" data-sortable>
+<a data-google-vignette="false" class="item" href="/items/jonathan-dessert-25306e6282.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">季節のジョナパフェ（早生みかん）</div>
+  <div class="price">1,099円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・しあわせ早生みかん</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-dessert-759b676f81.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">八天堂とろけるカスタードくりーむのブリュレパンケーキ（早生みかん）</div>
+  <div class="price">989円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・しあわせ早生みかん</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-dessert-7a2a2343ed.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">自家製プリンのジョナサンデー（早生みかん）</div>
+  <div class="price">879円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・しあわせ早生みかん</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-dessert-bd34266458.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">季節のジョナパフェDX（早生みかん）</div>
+  <div class="price">1,759円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・しあわせ早生みかん</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-433acbd59e.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sozai.svg" width="32" height="32" alt="惣菜・揚げ物" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">炙り鮭はらすといくらの出汁茶漬け＋おつまみカキフライ膳</div>
+  <div class="price">1,869円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-742cdb73fa.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sozai.svg" width="32" height="32" alt="惣菜・揚げ物" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">炙り鮭はらすといくらの出汁茶漬け＋ちいさなおろし竜田膳</div>
+  <div class="price">1,869円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-8ac29d5418.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/soup.svg" width="32" height="32" alt="スープ・グラタン" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">アンガスビーフ100% 贅沢きのこのオニオンスープハンバーグ</div>
+  <div class="price">1,484円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-8bc62b87b5.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/drink.svg" width="32" height="32" alt="ドリンク" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">アンガスビーフ100% 贅沢きのこのオニオンスープハンバーグ＋秋のプレミアムセット（ライスorパン・かぼちゃとキャロットラペのサラダ・ドリンクバー）</div>
+  <div class="price">1,979円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-90e586987e.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/bento.svg" width="32" height="32" alt="弁当・ごはん" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">とろサーモン＆いくら丼（みそ汁・惣菜つき）</div>
+  <div class="price">1,869円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-9abfb153dd.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sozai.svg" width="32" height="32" alt="惣菜・揚げ物" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">炙り鮭はらすといくらの出汁茶漬け膳</div>
+  <div class="price">1,539円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-a3efc56579.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">きのこのガーリックバター醤油ソース</div>
+  <div class="price">439円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-a6ad21ddee.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/salad.svg" width="32" height="32" alt="サラダ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">かぼちゃとキャロットラペのサラダ</div>
+  <div class="price">384円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-a9dc4b66b1.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">八天堂とろけるカスタードくりーむのミニパルフェ（早生みかん）</div>
+  <div class="price">549円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  
+</a>
+<a data-google-vignette="false" class="item" href="/items/jonathan-fair-c619877be4.html"
+   data-date="2026-11-23" data-chain="jonathan" data-status="on_sale">
+  <img class="cat-icon" src="/assets/icons/cat/sweets.svg" width="32" height="32" alt="スイーツ" loading="lazy" decoding="async"><div class="item-body"><div class="badge">ジョナサン</div><span class="st st-on">販売中</span>
+  <div class="t">八天堂とろけるカスタードくりーむのブリュレパンケーキ【1枚】（早生みかん）</div>
+  <div class="price">769円（税込）</div>
+  <div class="meta">2026-11-23（記録開始日）〜 販売中・秋のよくばりマルシェ</div>
+  </div>
+</a>
+</div>
+</section>
+<template id="ad-template"><div class="ad-slot">
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-2195959398357532"
+     data-ad-slot="1215675017"
+     data-ad-format="rectangle"
+     data-full-width-responsive="true"></ins>
+</div></template>
+
+<script>
+
+function computeAdPlan(counts, every, max) {
+  var eligible = [];
+  counts.forEach(function (n, i) { if (n > every) eligible.push(i); });
+  var chosen = eligible;
+  if (eligible.length > max) {
+    chosen = [];
+    for (var k = 0; k < max; k++) chosen.push(eligible[Math.floor(k * eligible.length / max)]);
+  }
+  var perGrid = Math.max(1, Math.floor(max / (chosen.length || 1)));
+  var left = max;
+  var plan = counts.map(function () { return []; });
+  chosen.forEach(function (gi) {
+    var placed = 0;
+    for (var i = every; i < counts[gi] && left > 0 && placed < perGrid; i += every) {
+      plan[gi].push(i);
+      left--;
+      placed++;
+    }
+  });
+  return plan;
+}
+(function () {
+  // チェーンごとのグループ(.chain-group)内でだけ並び替える。絞り込みはカード単位・グループ単位で隠す
+  var grids = Array.prototype.slice.call(document.querySelectorAll('[data-sortable]'));
+  if (!grids.length) return;
+  var select = document.getElementById('sort-select');
+  var chainSel = document.getElementById('chain-filter');
+  var statusSel = document.getElementById('status-filter');
+  // 広告枠。サーバー側はグリッドに枠を置かず、並び替え・絞り込みのたびにここで差し込み直す。
+  // 雛形(#ad-template)が無ければ(広告未設定・非対応ブラウザ)何もしない
+  var AD_EVERY = 12;
+  var AD_MAX = 3;
+  var adTpl = document.getElementById('ad-template');
+  function placeAds() {
+    var proto = adTpl && adTpl.content && adTpl.content.firstElementChild;
+    if (!proto) return;
+    // 広告枠(.ad-slot)は、表示済みの広告を読み込み直さないよう、DOMから外さない。
+    // 並べ替えで動かすのはカード(.item)だけ。枠をDOMから外すのは、下の「余った枠を捨てる」1か所だけ。
+    // 必要な枠数が今の枠数と同じなら枠はそのまま、足りない分だけ新規に作る(pushは新しい枠だけ)。
+    // 見えていないグリッドの枠は触らず残しておき、再表示されたら再利用する
+    var allItems = function (g) { return Array.prototype.slice.call(g.querySelectorAll('.item')); };
+    // 販売状況の絞り込みで隠れたカードは数えない
+    var visibleItems = function (g) {
+      return allItems(g).filter(function (el) { return el.style.display !== 'none'; });
+    };
+    var shown = grids.map(function (g) { return g.offsetParent !== null; });
+    var counts = grids.map(function (g, i) { return shown[i] ? visibleItems(g).length : 0; });
+    var plan = computeAdPlan(counts, AD_EVERY, AD_MAX);
+    grids.forEach(function (grid, gi) {
+      if (!shown[gi]) return;
+      var pos = plan[gi];
+      var slots = Array.prototype.filter.call(grid.children, function (el) {
+        return el.classList.contains('ad-slot');
+      });
+      while (slots.length > pos.length) {
+        var extra = slots.pop();
+        extra.parentNode.removeChild(extra);
+      }
+      while (slots.length < pos.length) {
+        var fresh = proto.cloneNode(true);
+        grid.appendChild(fresh);
+        slots.push(fresh);
+      }
+      if (!slots.length) return;
+      var put = function (el, ref) {
+        if (el.classList.contains('ad-slot')) return;
+        if (ref) grid.insertBefore(el, ref); else grid.appendChild(el);
+      };
+      var vis = visibleItems(grid);
+      var hidden = allItems(grid).filter(function (el) { return vis.indexOf(el) < 0; });
+      var from = 0;
+      pos.forEach(function (p, j) {
+        for (var k = from; k < p; k++) put(vis[k], slots[j]);
+        from = p;
+      });
+      for (var k = from; k < vis.length; k++) put(vis[k], null);
+      hidden.forEach(function (el) { put(el, null); });
+    });
+  }
+  function apply() {
+    var mode = select ? select.value : 'date';
+    var chain = chainSel ? chainSel.value : 'all';
+    var status = statusSel ? statusSel.value : 'all';
+    grids.forEach(function (grid) {
+      var group = grid.closest('.chain-group');
+      var items = Array.prototype.slice.call(grid.querySelectorAll('.item'));
+      items.sort(function (a, b) {
+        return (b.dataset.date || '').localeCompare(a.dataset.date || '');
+      });
+      var visible = 0;
+      items.forEach(function (el) {
+        grid.appendChild(el);
+        var show = status === 'all' || el.dataset.status === status;
+        el.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (group) {
+        var chainOk = chain === 'all' || group.dataset.chain === chain;
+        group.style.display = (chainOk && visible > 0) ? '' : 'none';
+        var cnt = group.querySelector('.cnt');
+        if (cnt) cnt.textContent = visible;
+      }
+    });
+    placeAds();
+    // 初回はページ末尾のAD_JSがpushするので、まだ無ければ何もしない
+    if (window.syncAds) window.syncAds();
+  }
+  if (select) select.addEventListener('change', apply);
+  if (chainSel) chainSel.addEventListener('change', apply);
+  if (statusSel) statusSel.addEventListener('change', apply);
+  apply();
+})();
+</script>
+
+
+<section class="about"><h2>ファミレスポチについて</h2>
+<p>デニーズ・ジョナサンの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。</p>
+<p>記録しているのは事実情報だけです。フェア名・商品名・価格・日付を載せ、説明文と画像は載せていません。詳しくは各社の公式サイトをご覧ください。各商品のページから、公式ページへ移動できます。</p>
+<p>終了の判定は、公式サイトのフェアのページから2日続けて消えたときだけ行います。終了日は「消えたのを確認した日」で、公式の最終販売日とはずれることがあります。開始日はデニーズは公式ニュースの見出し・リード文から、取れなければ記録を始めた日です。ジョナサンは記録を始めた日です。</p>
+<p>価格は税込を表示し、税抜は各商品のページに載せています。一部の店舗では価格や取り扱いが異なります。価格や販売状況は取得した時点のものです。当サイトは各社とは関係のない非公式サイトで、最新の情報は各社の公式サイトで確認してください。</p>
+</section>
+</main>
+<footer>
+価格・販売期間・販売状況は取得した時点のものです。店舗により異なる場合があります。最新の状況は各社公式サイトでご確認ください。一部の店舗では価格や取り扱いが異なります。
+当サイトはデニーズ・ジョナサン各社とは関係のない非公式サイトです。記録しているのは事実情報だけで、説明文・画像は載せていません。
+当サイトは広告（Google AdSense）を掲載し、アクセス解析（Googleアナリティクス）を使っています。いずれもCookieを使うことがあります。
+｜ <a data-google-vignette="false" href="/archive/">終了した期間限定メニュー</a>
+<nav class="sites"><span class="lbl">関連サイト</span>
+<a data-google-vignette="false" href="https://book.netaful.jp/">電書ポチ<span class="lbl"> Kindle本セール</span></a>
+<a data-google-vignette="false" href="https://kaden.netaful.jp/">家電ポチ<span class="lbl"> ガジェット・家電セール</span></a>
+<a data-google-vignette="false" href="https://apple.netaful.jp/">林檎ポチ<span class="lbl"> Apple整備済製品</span></a>
+<a data-google-vignette="false" href="https://manga.netaful.jp/">漫画ポチ<span class="lbl"> Webマンガ横断検索</span></a>
+<a data-google-vignette="false" href="https://shinkan.netaful.jp/">マンガ新刊ポチ<span class="lbl"> コミック新刊の発売日をまとめて</span></a>
+<a data-google-vignette="false" href="https://conbini.netaful.jp/">コンビニポチ<span class="lbl"> コンビニ新商品アーカイブ</span></a>
+<a data-google-vignette="false" href="https://fastfood.netaful.jp/">ファストフードポチ<span class="lbl"> ファストフード限定メニュー</span></a>
+<a data-google-vignette="false" href="https://cafe.netaful.jp/">カフェポチ<span class="lbl"> カフェの季節限定メニュー</span></a>
+<a data-google-vignette="false" href="https://sushi.netaful.jp/">回転寿司ポチ<span class="lbl"> 回転寿司の期間限定ネタ</span></a>
+<a data-google-vignette="false" href="https://cupmen.netaful.jp/">カップ麺ポチ<span class="lbl"> カップ麺の新商品</span></a>
+<a data-google-vignette="false" href="https://hotel.netaful.jp/">ホテルポチ<span class="lbl"> 空室ホテルを安い順に検索</span></a>
+<a data-google-vignette="false" href="https://onsen.netaful.jp/">温泉宿ポチ<span class="lbl"> 温泉地の空室を、すぐ探す</span></a>
+<a data-google-vignette="false" href="https://ritou.netaful.jp/">離島宿ポチ<span class="lbl"> 島の空室を、すぐ探す</span></a>
+<a data-google-vignette="false" href="https://michinoeki.netaful.jp/">道の駅ポチ<span class="lbl"> 道の駅の駐車場と設備</span></a>
+<a data-google-vignette="false" href="https://shinhatsubai.netaful.jp/">新発売ポチ<span class="lbl"> 新商品を発売日でまとめて</span></a>
+</nav>
+<nav class="sites"><span class="lbl">ポチシリーズ一覧：</span>
+<a data-google-vignette="false" href="https://pochi.netaful.jp/">ポチフル</a>
+</nav>
+</footer>
+
+<script>
+function syncAds() {
+  document.querySelectorAll("ins[data-ad-slot]").forEach(function (ins) {
+    if (ins.dataset.pushed) return;
+    if (ins.offsetParent === null) {
+      ins.classList.remove("adsbygoogle");
+      return;
+    }
+    ins.classList.add("adsbygoogle");
+    ins.dataset.pushed = "1";
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+  });
+}
+syncAds();
+</script>
+
+</body>
+</html>

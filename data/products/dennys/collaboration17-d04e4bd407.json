@@ -1,0 +1,37 @@
+{
+ "chain": "dennys",
+ "product_id": "collaboration17-d04e4bd407",
+ "name": "辛味噌チャーシューらぁ麺＋焼き餃子（2個）セット",
+ "category": null,
+ "fair": "飯田商店監修「味噌らぁ麺」",
+ "price": 2893,
+ "price_excl_tax": 2630,
+ "price_max": null,
+ "price_note": "税込。税抜は公式サイトの表示",
+ "price_variants": null,
+ "launch_date": null,
+ "launch_date_source": null,
+ "news_title": null,
+ "news_url": null,
+ "news_date": null,
+ "listed_at": null,
+ "planned_end_text": null,
+ "limited_kind": "フェア",
+ "stores_note": "一部の店舗(新宿西口店・赤坂駅前店・浅草雷門店など)では、価格や取り扱いが異なります",
+ "official_url": "https://www.dennys.jp/menu/collaboration17/",
+ "first_seen_at": "2026-11-23T14:20:31+09:00",
+ "last_seen_at": "2026-11-23",
+ "status": "on_sale",
+ "ended_observed_at": null,
+ "missed_runs": 0,
+ "price_history": [
+  {
+   "date": "2026-11-23",
+   "price": 2893
+  }
+ ],
+ "launch_search_runs": 1,
+ "source_list": [
+  "www.dennys.jp/menu/collaboration17/"
+ ]
+}

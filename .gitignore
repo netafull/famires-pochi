@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+data/run_summary.json
+.venv/
+.cache/
+
+# 秘密情報（2026-11-13監査対応で追加）
+.env
+.env.*
+!.env.example

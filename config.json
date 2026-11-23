@@ -1,0 +1,247 @@
+{
+ "top_title": "ファミレスポチ｜デニーズ・ジョナサンの期間限定メニュー記録",
+ "site_title": "ファミレスポチ",
+ "site_tagline": "デニーズ・ジョナサンの期間限定フェアを記録して残す",
+ "site_description": "デニーズ・ジョナサンの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。",
+ "site_url": "https://famires.netaful.jp/",
+ "site_accent": "#C62828",
+ "ga_measurement_id": "G-D8F2T2XB5W",
+ "adsense_client_id": "ca-pub-2195959398357532",
+ "adsense_ad_slot": "1215675017",
+ "chains": [
+  {
+   "slug": "dennys",
+   "name": "デニーズ",
+   "base_url": "https://www.dennys.jp",
+   "color": "#B71C1C",
+   "color_dark": "#EF9A9A"
+  },
+  {
+   "slug": "jonathan",
+   "name": "ジョナサン",
+   "base_url": "https://www.skylark.co.jp/jonathan/",
+   "color": "#1B5E20",
+   "color_dark": "#81C784"
+  }
+ ],
+ "chain_official": {
+  "dennys": {
+   "source": "デニーズ公式サイト",
+   "url": "https://www.dennys.jp/",
+   "menu_url": "https://www.dennys.jp/menu/"
+  },
+  "jonathan": {
+   "source": "ジョナサン公式サイト",
+   "url": "https://www.skylark.co.jp/jonathan/",
+   "menu_url": "https://www.skylark.co.jp/jonathan/menu/"
+  }
+ },
+ "user_agent": "FamiresPochi/1.0 (+https://famires.netaful.jp/)",
+ "request_interval_seconds": {
+  "dennys": 3,
+  "jonathan": 3
+ },
+ "max_requests_per_run": {
+  "dennys": 25,
+  "jonathan": 5
+ },
+ "new_burst_min": 15,
+ "new_burst_ratio": 0.6,
+ "new_burst_min_by_chain": {
+  "dennys": 20,
+  "jonathan": 15
+ },
+ "jonathan_max_pages": 3,
+ "jonathan_skip_slugs": [
+  "collab",
+  "recommend",
+  "recommend2",
+  "souppasta",
+  "drink_bar"
+ ],
+ "jonathan_exclude_names": [
+  "ドリンクバーセット"
+ ],
+ "netaful_tags": {
+  "dennys": null,
+  "jonathan": null
+ },
+ "netaful_search_terms": {
+  "dennys": "デニーズ",
+  "jonathan": "ジョナサン"
+ },
+ "netaful_title_filters": {
+  "dennys": [
+   "デニーズ"
+  ],
+  "jonathan": [
+   "ジョナサン"
+  ]
+ },
+ "netaful_title_excludes": {},
+ "netaful_title_always": [
+  "dennys",
+  "jonathan"
+ ],
+ "related_sites": [
+  {
+   "name": "電書ポチ",
+   "desc": "Kindle本セール",
+   "url": "https://book.netaful.jp/"
+  },
+  {
+   "name": "家電ポチ",
+   "desc": "ガジェット・家電セール",
+   "url": "https://kaden.netaful.jp/"
+  },
+  {
+   "name": "林檎ポチ",
+   "desc": "Apple整備済製品",
+   "url": "https://apple.netaful.jp/"
+  },
+  {
+   "name": "漫画ポチ",
+   "desc": "Webマンガ横断検索",
+   "url": "https://manga.netaful.jp/"
+  },
+  {
+   "name": "マンガ新刊ポチ",
+   "desc": "コミック新刊の発売日をまとめて",
+   "url": "https://shinkan.netaful.jp/"
+  },
+  {
+   "name": "コンビニポチ",
+   "desc": "コンビニ新商品アーカイブ",
+   "url": "https://conbini.netaful.jp/"
+  },
+  {
+   "name": "ファストフードポチ",
+   "desc": "ファストフード限定メニュー",
+   "url": "https://fastfood.netaful.jp/"
+  },
+  {
+   "name": "カフェポチ",
+   "desc": "カフェの季節限定メニュー",
+   "url": "https://cafe.netaful.jp/"
+  },
+  {
+   "name": "回転寿司ポチ",
+   "desc": "回転寿司の期間限定ネタ",
+   "url": "https://sushi.netaful.jp/"
+  },
+  {
+   "name": "カップ麺ポチ",
+   "desc": "カップ麺の新商品",
+   "url": "https://cupmen.netaful.jp/"
+  },
+  {
+   "name": "ホテルポチ",
+   "desc": "空室ホテルを安い順に検索",
+   "url": "https://hotel.netaful.jp/"
+  },
+  {
+   "name": "温泉宿ポチ",
+   "desc": "温泉地の空室を、すぐ探す",
+   "url": "https://onsen.netaful.jp/"
+  },
+  {
+   "name": "離島宿ポチ",
+   "desc": "島の空室を、すぐ探す",
+   "url": "https://ritou.netaful.jp/"
+  },
+  {
+   "name": "道の駅ポチ",
+   "desc": "道の駅の駐車場と設備",
+   "url": "https://michinoeki.netaful.jp/"
+  },
+  {
+   "name": "新発売ポチ",
+   "desc": "新商品を発売日でまとめて",
+   "url": "https://shinhatsubai.netaful.jp/"
+  }
+ ],
+ "related_keywords": [
+  {
+   "label": "パンプキン・かぼちゃ",
+   "words": [
+    "パンプキン",
+    "かぼちゃ",
+    "カボチャ"
+   ]
+  },
+  {
+   "label": "モンブラン・栗",
+   "words": [
+    "モンブラン",
+    "栗"
+   ]
+  },
+  {
+   "label": "さつまいも・芋",
+   "words": [
+    "さつまいも",
+    "サツマイモ",
+    "芋",
+    "いも",
+    "安納"
+   ]
+  },
+  {
+   "label": "いちご・ストロベリー",
+   "words": [
+    "いちご",
+    "イチゴ",
+    "苺",
+    "ストロベリー"
+   ]
+  },
+  {
+   "label": "チョコレート",
+   "words": [
+    "チョコ",
+    "ショコラ",
+    "カカオ"
+   ]
+  },
+  {
+   "label": "抹茶",
+   "words": [
+    "抹茶"
+   ]
+  },
+  {
+   "label": "りんご",
+   "words": [
+    "りんご",
+    "リンゴ",
+    "アップル"
+   ]
+  },
+  {
+   "label": "チーズケーキ",
+   "words": [
+    "チーズケーキ"
+   ]
+  },
+  {
+   "label": "ケーキ",
+   "words": [
+    "ケーキ"
+   ]
+  },
+  {
+   "label": "クリスマス・ホリデー",
+   "words": [
+    "クリスマス",
+    "ホリデー"
+   ]
+  }
+ ],
+ "policy_url": "",
+ "about": [
+  "デニーズ・ジョナサンの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。",
+  "記録しているのは事実情報だけです。フェア名・商品名・価格・日付を載せ、説明文と画像は載せていません。詳しくは各社の公式サイトをご覧ください。各商品のページから、公式ページへ移動できます。",
+  "終了の判定は、公式サイトのフェアのページから2日続けて消えたときだけ行います。終了日は「消えたのを確認した日」で、公式の最終販売日とはずれることがあります。開始日はデニーズは公式ニュースの見出し・リード文から、取れなければ記録を始めた日です。ジョナサンは記録を始めた日です。",
+  "価格は税込を表示し、税抜は各商品のページに載せています。一部の店舗では価格や取り扱いが異なります。価格や販売状況は取得した時点のものです。当サイトは各社とは関係のない非公式サイトで、最新の情報は各社の公式サイトで確認してください。"
+ ]
+}
