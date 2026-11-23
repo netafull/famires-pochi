@@ -353,6 +353,12 @@ class TestJoyfullCategory(unittest.TestCase):
         self.assertEqual(first["name"], "テストハンバーグ")
         self.assertEqual(first["listed_launch"], "2026-12-01")
 
+    def test_surrounding_brackets_are_stripped_from_name(self):
+        page = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))
+        self.assertEqual(page["items"][1]["name"], "幻のコショウのチキン竜田")
+        inner = P.parse_joyfull_category(S.joyfull_list([(601, "テスト「限定」バーガー", 500, 550)]))
+        self.assertEqual(inner["items"][0]["name"], "テスト「限定」バーガー")
+
     def test_ids_are_stable_across_runs(self):
         a = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
         b = P.parse_joyfull_category(S.joyfull_list(self.ITEMS))["items"]
