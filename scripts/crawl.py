@@ -1196,6 +1196,10 @@ def crawl_joyfull(getter, pending: dict, stats: dict, today: str | None = None) 
     def refresh(p, e):
         if e["fair"]:
             p["fair"] = e["fair"]
+        if e["name"] and p["name"] != e["name"]:
+            # 識別キーは数値IDで安定しているので、名前は一覧の表示に追随させる
+            # (「」の除去など、記録済みの名前の表記も次の巡回でそろう)
+            p["name"] = e["name"]
         p["price_excl_tax"] = e["price_excl_tax"]
 
     def enrich(p, e, is_new):
