@@ -431,6 +431,13 @@ class TestSteakdonFairList(unittest.TestCase):
             {"label": "100g", "price": 3278}, {"label": "150g", "price": 3938}, {"label": "200g", "price": 4818}])
         self.assertEqual(beef["note"], "※店舗限定")
 
+    def test_unreadable_item_is_counted_as_skipped(self):
+        items = [("9999", "時価ステーキ", "時価")] + list(S.STEAKDON_ITEMS)
+        page = P.parse_steakdon_fair_list(S.steakdon_fair_list(items=items))
+        self.assertEqual(page["skipped"], 1)
+        self.assertEqual([i["pid"] for i in page["items"]], ["1636", "1635", "1638"])
+        self.assertEqual(P.parse_steakdon_fair_list(S.steakdon_fair_list())["skipped"], 0)
+
     def test_commented_out_item_is_ignored(self):
         extra = ('<!-- <li><a href="fmenu_detail.html?fmenu_item_id=9999">'
                  '<p class="menu_name">幻のメニュー</p><p class="menu_price">100円（税込110円）</p></a></li> -->')

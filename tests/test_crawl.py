@@ -961,6 +961,16 @@ class TestSteakdonCrawl(unittest.TestCase):
             self.assertEqual((single["price"], single["price_max"], single["price_variants"]), (429, None, None))
             self.assertIsNone(single["stores_note"])
 
+    def test_unreadable_price_run_does_not_end_the_product(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            bad = [("1636", "黒毛和牛ステーキ", "時価")] + list(S.STEAKDON_ITEMS[1:])
+            run_chain(crawl.crawl_steakdon, steakdon_site(items=bad), "2026-11-24")
+            run_chain(crawl.crawl_steakdon, steakdon_site(items=bad), "2026-11-25")
+            p = helpers.prod("steakdon", "1636")
+            self.assertEqual(p["status"], "on_sale")
+            self.assertIsNone(p.get("ended_observed_at"))
+
     def test_no_description_or_image_keys_are_saved(self):
         with TempData():
             run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
