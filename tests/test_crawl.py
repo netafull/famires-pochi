@@ -1,4 +1,4 @@
-"""巡回(デニーズ・ジョナサン)と共通の仕組み(販売状況の追跡・歯止め・急減の検知・実行要約・連続日数・設定)のテスト。ネットワーク不使用。"""
+"""巡回(デニーズ・ジョナサン・ステーキのどん)と共通の仕組み(販売状況の追跡・歯止め・急減の検知・実行要約・連続日数・設定)のテスト。ネットワーク不使用。"""
 import json
 import unittest
 from unittest import mock
@@ -15,6 +15,10 @@ D_COLLAB = DENNYS + "/menu/collaboration17/"
 J_TOP = SKY + "/jonathan/menu/"
 J_FAIR = SKY + "/jonathan/menu/fair/index.html"
 J_DESSERT = SKY + "/jonathan/menu/dessert/index.html"
+SD = "https://www.steak-don.jp"
+SD_LIST = SD + "/fmenu_list.html?fmenu_categ_id=94"
+SD_NEWS = SD + "/news.html"
+SD_NEWS_ENTRIES = [("2026年09月09日", 1041, "9月17日（木）より「マロンスイーツフェア」開始")]
 COCOS = "https://www.cocos-jpn.co.jp"
 C_FAIR = COCOS + "/menu/fair/"
 C_NEWS = COCOS + "/news/2026/menu/"
@@ -64,6 +68,14 @@ def jonathan_site(fair_alt=S.JONATHAN_FAIR_ALT, dessert_alt=None, slugs=("collab
     s.set(J_FAIR, S.jonathan_page("秋のよくばりマルシェ", [fair_alt]))
     dessert_alt = dessert_alt or S.alt(("季節のジョナパフェ（早生みかん）", 999, 1099))
     s.set(J_DESSERT, S.jonathan_page("しあわせ早生みかん", [dessert_alt]))
+    return s
+
+
+def steakdon_site(items=S.STEAKDON_ITEMS, news=SD_NEWS_ENTRIES):
+    s = FakeSite()
+    s.set(SD + "/robots.txt", NotFoundError("404"))
+    s.set(SD_LIST, S.steakdon_fair_list(items))
+    s.set(SD_NEWS, S.steakdon_news(news))
     return s
 
 
@@ -184,11 +196,11 @@ class TestConfig(unittest.TestCase):
 
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
-        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan", "joyfull"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25})
-        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20})
+        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan", "joyfull", "steakdon"])
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25, "steakdon": 10})
+        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20, "steakdon": 15})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
-        for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull"):
+        for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull", "steakdon"):
             self.assertGreaterEqual(cfg["request_interval_seconds"][c], 3)
 
     def test_site_identity_and_ads(self):
@@ -906,7 +918,7 @@ class TestHealthAndSummary(unittest.TestCase):
 
     def test_main_rejects_unknown_chain(self):
         self.assertEqual(crawl.main(["starbucks"]), 2)
-        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan", "joyfull"])
+        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan", "joyfull", "steakdon"])
 
     def test_one_chain_exception_does_not_stop_the_other(self):
         def boom(getter, pending, stats, today=None):
@@ -927,3 +939,129 @@ class TestHealthAndSummary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSteakdonCrawl(unittest.TestCase):
+    def test_first_run_records_all_items_with_facts_only(self):
+        with TempData():
+            site = steakdon_site()
+            _, st = run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertTrue(st["steakdon"]["list_ok"])
+            self.assertEqual(ids("steakdon"), ["1635", "1636", "1638"])
+            p = helpers.prod("steakdon", "1636")
+            self.assertEqual((p["name"], p["price"], p["price_max"], p["price_excl_tax"]),
+                             ("黒毛和牛ステーキ", 3278, 4818, 2980))
+            self.assertEqual(p["price_variants"], [
+                {"label": "100g", "price": 3278}, {"label": "150g", "price": 3938}, {"label": "200g", "price": 4818}])
+            self.assertEqual(p["fair"], "フェアメニュー")
+            self.assertEqual(p["official_url"], SD + "/fmenu_detail.html?fmenu_item_id=1636")
+            self.assertEqual(p["stores_note"], "※店舗限定")
+            self.assertEqual(p["price_history"], [{"date": "2026-11-23", "price": 3278, "price_max": 4818}])
+            single = helpers.prod("steakdon", "1638")
+            self.assertEqual((single["price"], single["price_max"], single["price_variants"]), (429, None, None))
+            self.assertIsNone(single["stores_note"])
+
+    def test_no_description_or_image_keys_are_saved(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            for p in crawl.load_chain_products("steakdon"):
+                blob = json.dumps(p, ensure_ascii=False)
+                for k in ("image", "photo", "description", "lead", "nutrition", "allergen"):
+                    self.assertNotIn(k, blob)
+
+    def test_requests_within_limit_and_detail_pages_are_not_fetched(self):
+        with TempData():
+            site = steakdon_site()
+            run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertLessEqual(len(site.calls), crawl.CONFIG["max_requests_per_run"]["steakdon"])
+            self.assertEqual(len(site.calls), 3)  # robots + カテゴリページ + ニュース一覧
+            self.assertFalse(any("fmenu_detail" in u for u in site.calls))
+            self.assertFalse(any("campaign_fair" in u for u in site.calls))
+
+    def test_launch_date_from_news_by_product_name(self):
+        with TempData():
+            news = [("2026年09月09日", 2001, "「モンブランパフェ」9月17日（木）より販売開始")]
+            run_chain(crawl.crawl_steakdon, steakdon_site(news=news), "2026-11-23")
+            p = helpers.prod("steakdon", "1638")
+            self.assertEqual((p["launch_date"], p["launch_date_source"]), ("2026-09-17", "official_news"))
+            self.assertEqual(p["news_url"], SD + "/news_detail.html?num=2001")
+            # 見出しに商品名の出ないフェア記事(マロンスイーツフェア)では結びつかない
+            self.assertIsNone(helpers.prod("steakdon", "1635")["launch_date"])
+
+    def test_fair_name_only_news_leaves_recording_start(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            self.assertTrue(all(p["launch_date"] is None for p in crawl.load_chain_products("steakdon")))
+
+    def test_news_failure_does_not_stop_recording(self):
+        with TempData():
+            site = steakdon_site()
+            site.set(SD_NEWS, RuntimeError("timeout"))
+            _, st = run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertEqual(len(ids("steakdon")), 3)
+            self.assertTrue(st["steakdon"]["list_ok"])
+
+    def test_ended_after_two_misses_on_different_days(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            fewer = steakdon_site(items=S.STEAKDON_ITEMS[:2])
+            run_chain(crawl.crawl_steakdon, fewer, "2026-11-24")
+            p = helpers.prod("steakdon", "1638")
+            self.assertEqual((p["status"], p["missed_runs"]), ("on_sale", 1))
+            run_chain(crawl.crawl_steakdon, fewer, "2026-11-25")
+            p = helpers.prod("steakdon", "1638")
+            self.assertEqual((p["status"], p["ended_observed_at"]), ("ended", "2026-11-25"))
+
+    def test_price_change_is_recorded(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            changed = [("1638", "モンブランパフェ", "450円（税込495円）") if i[0] == "1638" else i
+                       for i in S.STEAKDON_ITEMS]
+            run_chain(crawl.crawl_steakdon, steakdon_site(items=changed), "2026-11-24")
+            p = helpers.prod("steakdon", "1638")
+            self.assertEqual(p["price"], 495)
+            self.assertEqual(p["price_history"][-1], {"date": "2026-11-24", "price": 495})
+
+    def test_list_without_price_is_incomplete_and_nothing_ends(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")
+            broken = steakdon_site(items=[("3000", "価格が画像だけ", "画像のみ")])
+            for d in ("2026-11-24", "2026-11-25", "2026-11-26"):
+                _, st = run_chain(crawl.crawl_steakdon, broken, d)
+                self.assertFalse(st["steakdon"]["list_ok"])
+            self.assertTrue(all(p["status"] == "on_sale" for p in crawl.load_chain_products("steakdon")))
+
+    def test_structure_change_is_list_failed(self):
+        with TempData():
+            site = steakdon_site()
+            site.set(SD_LIST, "<html>構造が変わった</html>")
+            _, st = run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertFalse(st["steakdon"]["list_ok"])
+            self.assertEqual(ids("steakdon"), [])
+
+    def test_blocked_stops_without_workaround(self):
+        with TempData():
+            site = steakdon_site()
+            site.set(SD_LIST, BlockedError("HTTP 403"))
+            _, st = run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertTrue(st["steakdon"]["blocked"])
+            self.assertFalse(st["steakdon"]["list_ok"])
+
+    def test_robots_disallow_skips(self):
+        with TempData():
+            site = steakdon_site()
+            site.set(SD + "/robots.txt", "User-agent: *\nDisallow: /fmenu_list.html\n")
+            run_chain(crawl.crawl_steakdon, site, "2026-11-23")
+            self.assertEqual(ids("steakdon"), [])
+            self.assertNotIn(SD_LIST, site.calls)
+
+    def test_burst_guard_holds_a_restructure(self):
+        with TempData():
+            run_chain(crawl.crawl_steakdon, steakdon_site(), "2026-11-23")  # baseline: 3件
+            many = [(str(5000 + i), f"全く別の新作{i}", "500円（税込550円）") for i in range(20)]
+            pend, st = run_chain(crawl.crawl_steakdon, steakdon_site(items=many), "2026-11-24")
+            self.assertEqual(st["steakdon"]["new_products"], 0)
+            self.assertFalse(st["steakdon"]["list_ok"])
+            self.assertEqual(pend["steakdon"]["_suspected_restructure"]["threshold"], 15)
+
+

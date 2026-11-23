@@ -410,3 +410,69 @@ class TestJoyfullNews(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSteakdonFairList(unittest.TestCase):
+    def test_items_names_prices_and_official_ids(self):
+        page = P.parse_steakdon_fair_list(S.steakdon_fair_list())
+        self.assertEqual(page["title"], "フェアメニュー")
+        self.assertEqual([i["pid"] for i in page["items"]], ["1636", "1635", "1638"])
+        pork = page["items"][1]
+        self.assertEqual((pork["name"], pork["price"], pork["price_excl_tax"]),
+                         ("ワイルドポークマウンテン２００ｇ", 1518, 1380))
+        self.assertIsNone(pork["price_max"])
+        self.assertIsNone(pork["price_variants"])
+        self.assertEqual(pork["link"], "/fmenu_detail.html?fmenu_item_id=1635")
+
+    def test_size_variants_and_note(self):
+        beef = P.parse_steakdon_fair_list(S.steakdon_fair_list())["items"][0]
+        self.assertEqual((beef["price"], beef["price_max"], beef["price_excl_tax"]), (3278, 4818, 2980))
+        self.assertEqual(beef["price_variants"], [
+            {"label": "100g", "price": 3278}, {"label": "150g", "price": 3938}, {"label": "200g", "price": 4818}])
+        self.assertEqual(beef["note"], "※店舗限定")
+
+    def test_commented_out_item_is_ignored(self):
+        extra = ('<!-- <li><a href="fmenu_detail.html?fmenu_item_id=9999">'
+                 '<p class="menu_name">幻のメニュー</p><p class="menu_price">100円（税込110円）</p></a></li> -->')
+        page = P.parse_steakdon_fair_list(S.steakdon_fair_list(extra=extra))
+        self.assertEqual([i["pid"] for i in page["items"]], ["1636", "1635", "1638"])
+
+    def test_description_is_never_read(self):
+        extra = ('<li><a href="fmenu_detail.html?fmenu_item_id=2000">'
+                 '<p class="menu_name">説明つき商品</p><p class="menu_price">500円（税込550円）</p>'
+                 '<p class="menu_txt">北海道産の素材を使った説明文</p></a></li>')
+        page = P.parse_steakdon_fair_list(S.steakdon_fair_list(extra=extra))
+        self.assertNotIn("説明文", str(page))
+        self.assertEqual(page["items"][-1]["name"], "説明つき商品")
+
+    def test_no_price_means_empty_items_and_missing_structure_is_error(self):
+        no_price = S.steakdon_fair_list([("3000", "価格が画像だけ", "画像のみ")])
+        self.assertEqual(P.parse_steakdon_fair_list(no_price)["items"], [])
+        with self.assertRaises(ValueError):
+            P.parse_steakdon_fair_list("<html>構造が変わった</html>")
+        with self.assertRaises(ValueError):
+            P.parse_steakdon_fair_list('<div class="menu_list_subtitle"><p>フェアメニュー</p></div><p>枠が無い</p>')
+
+    def test_ids_are_stable_across_runs(self):
+        a = [i["pid"] for i in P.parse_steakdon_fair_list(S.steakdon_fair_list())["items"]]
+        b = [i["pid"] for i in P.parse_steakdon_fair_list(S.steakdon_fair_list())["items"]]
+        self.assertEqual(a, b)
+
+
+class TestSteakdonNews(unittest.TestCase):
+    def test_entries(self):
+        news = P.parse_steakdon_news(S.steakdon_news([
+            ("2026年09月09日", 1041, "9月17日（木）より「マロンスイーツフェア」開始"),
+            ("2026年11月3日", 1073, "11月6日ステーキのどん公田店<br>営業時間変更について")]))
+        self.assertEqual(news[0]["date"], "2026-09-09")
+        self.assertEqual(news[0]["url"], "https://www.steak-don.jp/news_detail.html?num=1041")
+        self.assertIn("マロンスイーツフェア", news[0]["title"])
+        self.assertEqual(news[1]["date"], "2026-11-03")
+        self.assertNotIn("<br>", news[1]["title"])
+
+    def test_garbage_is_empty(self):
+        self.assertEqual(P.parse_steakdon_news("<html>変わった</html>"), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -121,6 +121,20 @@ class TestItemPage(unittest.TestCase):
         self.assertIn("2026-11-19〜 販売中", h)
         self.assertIn("<title>ココス「勤労感謝の芋栗かぼちゃクレープ」の価格・販売期間｜ファミレスポチ</title>", h)
 
+    def test_steakdon_item_with_size_variants(self):
+        it = item(chain="steakdon", pid="1636", name="黒毛和牛ステーキ", fair="フェアメニュー",
+                  price=3278, price_max=4818, price_excl_tax=2980,
+                  price_variants=[{"label": "100g", "price": 3278}, {"label": "150g", "price": 3938},
+                                  {"label": "200g", "price": 4818}],
+                  official_url="https://www.steak-don.jp/fmenu_detail.html?fmenu_item_id=1636",
+                  stores_note="※店舗限定")
+        h = G.render_item_page(it)
+        self.assertIn("出典：ステーキのどん公式サイト", h)
+        self.assertIn("フェアメニュー", h)
+        self.assertIn("100g", h)
+        self.assertIn("4,818円（税込）", h)
+        self.assertIn("※店舗限定", h)
+
 
 class TestBigboyPage(unittest.TestCase):
     def test_item_page_source_and_price_range(self):
@@ -160,7 +174,7 @@ class TestLists(unittest.TestCase):
         self.assertNotIn("カロリー順", h)
         self.assertEqual(len(re.findall(r"<h1[ >]", h)), 1)
         self.assertIn('"name": "ファミレスポチ"', h)
-        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの期間限定メニュー記録</title>", h)
+        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定メニュー記録</title>", h)
 
     def test_card_has_no_image_besides_category_icon(self):
         for m in re.finditer(r"<img[^>]+>", G.render_card(self.items[0])):
@@ -241,6 +255,7 @@ class TestChainColors(unittest.TestCase):
         self.assertIn("--cocos: #E65100", css)
         self.assertIn("--cocos: #FFB74D", css)
         self.assertIn("--joyfull: #6A1B9A", css)
+        self.assertIn("--steakdon: #6D4C41", css)
         self.assertIn("prefers-color-scheme: dark", css)
 
 

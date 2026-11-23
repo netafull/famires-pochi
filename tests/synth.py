@@ -219,3 +219,42 @@ def joyfull_news(entries=()) -> str:
         </a>
 """
     return f'<html><body><main><div class="menu-grid">{cards}</div></main></body></html>'
+
+
+# ステーキのどんのフェアメニュー一覧(2026-11-23)の一部。サイズ別の価格は <br> 区切りで1つの <p> に入る
+STEAKDON_ITEMS = [
+    ("1636", "黒毛和牛ステーキ",
+     "100g　2,980円（税込3,278円）<br>\n150g　3,580円（税込3,938円）<br>\n200g　4,380円（税込4,818円）<br>※店舗限定"),
+    ("1635", "ワイルドポークマウンテン２００ｇ", "1,380円（税込1,518円）"),
+    ("1638", "モンブランパフェ", "390円（税込429円）"),
+]
+
+
+def steakdon_fair_list(items=STEAKDON_ITEMS, title: str = "フェアメニュー", extra: str = "") -> str:
+    """items: [(商品ID, 名前, 価格ブロックHTML)]。extra は一覧の <ul> の中に入れる追加HTML(コメントの確認用)。"""
+    lis = ""
+    for iid, name, price_html in items:
+        lis += (f'<li>\n<a href="fmenu_detail.html?fmenu_item_id={iid}">\n'
+                f'<img src="/img/fmenu/{iid}_img1.jpg">\n'
+                f'<div class="menu_list_border">\n<p class="menu_name">{name}</p>\n'
+                f'<p class="menu_price">{price_html}</p>\n</div>\n</a>\n'
+                f'<div class="menu_list_kcal">\n<p></p>\n</div>\n</li>\n')
+    return f"""<html><body>
+<div class="menu_list_subtitle">
+<p>{title}</p>
+</div>
+<div class="menulist_list_inner">
+<ul>
+{lis}{extra}
+</ul>
+</div><!--/menulist_list_inner-->
+</body></html>"""
+
+
+def steakdon_news(entries=()) -> str:
+    """entries: [(日付 2026年09月09日, num, 見出しHTML)]"""
+    rows = ""
+    for d, num, title in entries:
+        rows += (f'<tr>\n<td class="news_date">{d}</td>\n'
+                 f'<td><a href="news_detail.html?num={num}">{title}</a></td>\n</tr>\n')
+    return f'<html><body><table class="news_table">{rows}</table></body></html>'
