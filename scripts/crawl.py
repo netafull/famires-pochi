@@ -955,14 +955,10 @@ def crawl_bigboy(getter, pending: dict, stats: dict, today: str | None = None) -
         base = re.split(r"[～〜~]", p["name"])[0]  # デニーズと同じく、副題(～以降)を落とした名前でも照合する
         if hit is None and base != p["name"]:
             hit = find_launch(base, news.get(), launch_ref(p), all_names)
-        if hit is None and p.get("fair"):
-            hit = find_launch(p["fair"], news.get(), launch_ref(p), [])
-            if hit:
-                hit["via"] = "fair"  # 商品名でなくフェア名での照合(本文由来と同じく「ずれることがある」扱い)
+        # フェア名での照合はしない。ビッグボーイのフェア名は全商品共通の欄名(期間限定メニュー)なので、
+        # その語を含む記事があると全商品に同じ開始日が付いてしまう(モルのレビュー指摘、2026-11-23)
         if hit:
             apply_launch(p, hit, "official_news")
-            if hit.get("via") == "fair":
-                p["launch_date_source"] = "official_news_fair"
         else:
             p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
 
