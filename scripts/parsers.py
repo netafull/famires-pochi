@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフルの公式ページのパーサ。
+"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの公式ページのパーサ。
 
 ネットワークには触らない純粋関数だけを置く(合成フィクスチャでテストする)。
 公式のHTML/JSONの構造が変わったら、まずここが壊れる。壊れ方は2通りに分ける:
@@ -610,4 +610,96 @@ def parse_joyfull_news(html: str) -> list[dict]:
             continue
         out.append({"date": f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}",
                     "title": clean_text(t.group(1)), "url": a.group(1)})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# ステーキのどん (www.steak-don.jp)
+# ---------------------------------------------------------------------------
+
+STEAKDON_BASE = "https://www.steak-don.jp"
+STEAKDON_FAIR_LIST_PATH = "/fmenu_list.html?fmenu_categ_id=94"
+STEAKDON_NEWS_PATH = "/news.html"
+
+
+def _steakdon_price_block(block_html: str) -> dict | None:
+    """<p class="menu_price"> の中身(「100g　2,980円（税込3,278円）<br>150g　…<br>※店舗限定」)を分解する。
+    <br> で区切られた行ごとに parse_price_pair で読み、価格の手前の語(「100g」)をサイズのラベルにする。
+    価格でない行(「※店舗限定」など)は note に集める。価格が1つも取れなければ None。"""
+    variants, notes = [], []
+    for seg in re.split(r"<br\s*/?>", block_html or ""):
+        text = clean_text(seg)
+        if not text:
+            continue
+        pp = parse_price_pair(text)
+        if pp is None:
+            notes.append(text)
+            continue
+        label = _PRICE_PAIR_RE.sub("", unicodedata.normalize("NFKC", text)).strip()
+        variants.append({"label": label, "price_excl_tax": pp[0], "price": pp[1]})
+    if not variants:
+        return None
+    prices = [v["price"] for v in variants]
+    return {
+        "price": prices[0],
+        "price_max": max(prices) if len(set(prices)) > 1 else None,
+        "price_excl_tax": variants[0]["price_excl_tax"],
+        "price_variants": ([{"label": v["label"], "price": v["price"]} for v in variants]
+                           if len(variants) > 1 else None),
+        "note": "".join(notes) or None,
+    }
+
+
+def parse_steakdon_fair_list(html: str) -> dict:
+    """フェアメニューのカテゴリページ(fmenu_list.html?fmenu_categ_id=94)から
+    {title, items:[{pid, name, price, price_max, price_excl_tax, price_variants, note, link}], skipped}。
+    商品は <div class="menulist_list_inner"> の中の、商品詳細へのリンク
+    (fmenu_detail.html?fmenu_item_id=N)に付いた <p class="menu_name"> と <p class="menu_price">。
+    識別キーは公式の商品ID(fmenu_item_id)。バナー側のフェアページ(campaign_fair.html)は価格が画像だけなので使わない。
+    見出し(menu_list_subtitle)か一覧の枠(menulist_list_inner)が無ければ ValueError(構造変更の疑い)。
+    リンクはあったが名前か価格が読めなかった商品は items に入れず、件数を skipped に数える
+    (呼び出し側は skipped が1件以上なら、その回を「不完全」として終了判定をしない)。
+    価格が取れた商品が0件なら items は空(呼び出し側が「不完全」とする)。"""
+    h = _strip_comments(html)
+    t = re.search(r'<div class="menu_list_subtitle">\s*<p>(.*?)</p>', h, re.S)
+    if not t:
+        raise ValueError("ステーキのどん: カテゴリページの見出し(menu_list_subtitle)が見つからない")
+    inner = re.search(r'<div class="menulist_list_inner">', h)
+    if not inner:
+        raise ValueError("ステーキのどん: 商品一覧の枠(menulist_list_inner)が見つからない")
+    end = h.find("</ul>", inner.end())
+    if end < 0:
+        raise ValueError("ステーキのどん: 商品一覧の枠(menulist_list_inner)に </ul> が見つからない")
+    block_all = h[inner.end():end]
+    items, seen, skipped = [], set(), 0
+    pat = r'<a\s[^>]*href="fmenu_detail\.html\?fmenu_item_id=(\d+)"[^>]*>(.*?)</a>'
+    for m in re.finditer(pat, block_all, re.S):
+        item_id, block = m.group(1), m.group(2)
+        if item_id in seen:
+            continue
+        nm = re.search(r'<p class="menu_name">(.*?)</p>', block, re.S)
+        pm = re.search(r'<p class="menu_price">(.*?)</p>', block, re.S)
+        name = clean_text(nm.group(1)) if nm else ""
+        price = _steakdon_price_block(pm.group(1)) if pm else None
+        if not name or price is None:
+            skipped += 1
+            continue
+        seen.add(item_id)
+        items.append({"pid": item_id, "name": name, "link": f"/fmenu_detail.html?fmenu_item_id={item_id}",
+                      **price})
+    return {"title": clean_text(t.group(1)), "items": items, "skipped": skipped}
+
+
+def parse_steakdon_news(html: str) -> list[dict]:
+    """/news.html の一覧から [{date: YYYY-MM-DD, title, text, url}]。text は一覧にリード文が無いので空。
+    行は <td class="news_date">2026年09月09日</td><td><a href="news_detail.html?num=1041">見出し</a></td>。
+    構造が違えば空のリスト(発売日なしで続行)。"""
+    h = _strip_comments(html)
+    out = []
+    pat = (r'<td class="news_date">\s*(\d{4})年(\d{1,2})月(\d{1,2})日\s*</td>\s*'
+           r'<td><a\s[^>]*href="(news_detail\.html\?num=\d+)"[^>]*>(.*?)</a></td>')
+    for m in re.finditer(pat, h, re.S):
+        out.append({"date": f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}",
+                    "title": clean_text(m.group(5)), "text": "",
+                    "url": STEAKDON_BASE + "/" + m.group(4)})
     return out
