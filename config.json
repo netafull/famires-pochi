@@ -78,7 +78,7 @@
    "ジョナサン"
   ]
  },
- "netaful_title_excludes": {},
+ "netaful_title_excludes": {"jonathan": ["アイブ"]},
  "netaful_title_always": [
   "dennys",
   "jonathan"

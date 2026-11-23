@@ -57,7 +57,7 @@ TAGS = {k: (int(v) if v is not None else None) for k, v in CONFIG["netaful_tags"
 TITLE_FILTERS: dict[str, list[str]] = CONFIG.get("netaful_title_filters", {})
 SEARCH_TERMS: dict[str, str] = CONFIG.get("netaful_search_terms", {})
 # 下記のチェーン(ファミレスポチでは全2社)は、タグ・検索のどちらの結果にも常にタイトル判定をかける
-# (検索は本文にだけ語が出る無関係の記事も拾うため)。除外語(netaful_title_excludes)は今は空
+# (検索は本文にだけ語が出る無関係の記事も拾うため)。除外語(netaful_title_excludes)はジョナサンの「アイブ」(ジョナサン・アイブの記事)
 TITLE_EXCLUDES: dict[str, list[str]] = CONFIG.get("netaful_title_excludes", {})
 TITLE_ALWAYS: set[str] = set(CONFIG.get("netaful_title_always", []))
 
