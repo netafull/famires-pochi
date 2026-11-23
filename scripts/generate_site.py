@@ -651,7 +651,7 @@ def page_shell(title: str, description: str, body: str, canonical: str, extra_he
 </main>
 <footer>
 価格・販売期間・販売状況は取得した時点のものです。店舗により異なる場合があります。最新の状況は各社公式サイトでご確認ください。一部の店舗では価格や取り扱いが異なります。
-当サイトは{esc(CHAIN_LIST_TEXT)}各社とは関係のない非公式サイトです。記録しているのは事実情報だけで、説明文・画像は載せていません。
+当サイトは{esc(CHAIN_LIST_TEXT)}各社とは関係のない非公式サイトです。記録しているのは事実情報だけで、公式サイトの説明文・画像は載せていません。
 {disclosure_line}｜ <a href="/archive/">終了した期間限定メニュー</a>
 {related_html}
 {SERIES_INDEX_HTML}
