@@ -1,8 +1,8 @@
 {
- "top_title": "ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定メニュー記録",
+ "top_title": "ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの期間限定メニュー記録",
  "site_title": "ファミレスポチ",
- "site_tagline": "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定フェアを記録して残す",
- "site_description": "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。",
+ "site_tagline": "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの期間限定フェアを記録して残す",
+ "site_description": "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの期間限定フェアのメニューを毎日記録し、フェアが終わって公式サイトから消えても、価格・販売期間を後から確認できるアーカイブ。",
  "site_url": "https://famires.netaful.jp/",
  "site_accent": "#C62828",
  "ga_measurement_id": "G-D8F2T2XB5W",
@@ -51,6 +51,13 @@
    "base_url": "https://www.steak-don.jp",
    "color": "#6D4C41",
    "color_dark": "#BCAAA4"
+  },
+  {
+   "slug": "jollypasta",
+   "name": "ジョリーパスタ",
+   "base_url": "https://www.jolly-pasta.co.jp",
+   "color": "#00838F",
+   "color_dark": "#4DD0E1"
   }
  ],
  "chain_official": {
@@ -84,6 +91,11 @@
    "source": "ステーキのどん公式サイト",
    "url": "https://www.steak-don.jp/",
    "menu_url": "https://www.steak-don.jp/fmenu_list.html?fmenu_categ_id=94"
+  },
+  "jollypasta": {
+   "source": "ジョリーパスタ公式サイト",
+   "url": "https://www.jolly-pasta.co.jp/",
+   "menu_url": "https://www.jolly-pasta.co.jp/menu/"
   }
  },
  "user_agent": "FamiresPochi/1.0 (+https://famires.netaful.jp/)",
@@ -94,7 +106,8 @@
   "bigboy": 3,
   "joyfull": 3
 ,
-  "steakdon": 3
+  "steakdon": 3,
+  "jollypasta": 3
  },
  "max_requests_per_run": {
   "dennys": 25,
@@ -103,7 +116,8 @@
   "bigboy": 20,
   "joyfull": 25
 ,
-  "steakdon": 10
+  "steakdon": 10,
+  "jollypasta": 15
  },
  "new_burst_min": 15,
  "new_burst_ratio": 0.6,
@@ -114,9 +128,11 @@
   "bigboy": 15,
   "joyfull": 20
 ,
-  "steakdon": 15
+  "steakdon": 15,
+  "jollypasta": 20
  },
  "bigboy_news_max_articles": 8,
+ "jollypasta_news_max_articles": 6,
  "jonathan_max_pages": 3,
  "jonathan_skip_slugs": [
   "collab",
@@ -138,7 +154,8 @@
   "bigboy": null,
   "joyfull": null
 ,
-  "steakdon": null
+  "steakdon": null,
+  "jollypasta": null
  },
  "netaful_search_terms": {
   "dennys": "デニーズ",
@@ -147,7 +164,8 @@
   "bigboy": "ビッグボーイ",
   "joyfull": "ジョイフル"
 ,
-  "steakdon": "ステーキのどん"
+  "steakdon": "ステーキのどん",
+  "jollypasta": "ジョリーパスタ"
  },
  "netaful_title_filters": {
   "dennys": [
@@ -168,6 +186,9 @@
   ],
   "steakdon": [
    "ステーキのどん"
+  ],
+  "jollypasta": [
+   "ジョリーパスタ"
   ]
  },
  "netaful_title_excludes": {"jonathan": ["アイブ"], "joyfull": ["本田"]},
@@ -178,7 +199,8 @@
   "bigboy",
   "joyfull"
 ,
-  "steakdon"
+  "steakdon",
+  "jollypasta"
  ],
  "related_sites": [
   {
@@ -341,6 +363,6 @@
  ],
  "policy_url": "",
  "about": [
-  "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。"
+  "デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの公式サイトを1日1回チェックして、期間限定のフェアメニューを記録しています。公式サイトはフェアが終わったメニューのページを消してしまうので、いつからいつまで載っていたかを、あとから確認できるように残しています。"
  ]
 }
