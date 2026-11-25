@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://famires.netaful.jp/</loc><lastmod>2026-11-23</lastmod></url>
+<url><loc>https://famires.netaful.jp/</loc><lastmod>2026-11-25</lastmod></url>
 <url><loc>https://famires.netaful.jp/archive/</loc></url>
-<url><loc>https://famires.netaful.jp/chains/</loc><lastmod>2026-11-23</lastmod></url>
+<url><loc>https://famires.netaful.jp/chains/</loc><lastmod>2026-11-25</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/dennys/</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/jonathan/</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/cocos/</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/bigboy/</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/joyfull/</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/chains/steakdon/</loc><lastmod>2026-11-23</lastmod></url>
+<url><loc>https://famires.netaful.jp/chains/jollypasta/</loc><lastmod>2026-11-25</lastmod></url>
 <url><loc>https://famires.netaful.jp/items/dennys-collaboration17-10cecbfd5d.html</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/items/dennys-collaboration17-1d951cf482.html</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/items/dennys-collaboration17-4b2a681e04.html</loc><lastmod>2026-11-23</lastmod></url>
@@ -83,4 +84,15 @@
 <url><loc>https://famires.netaful.jp/items/steakdon-1636.html</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/items/steakdon-1637.html</loc><lastmod>2026-11-23</lastmod></url>
 <url><loc>https://famires.netaful.jp/items/steakdon-1638.html</loc><lastmod>2026-11-23</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-dolce-d_apple_crostata.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-dolce-d_apple_dolce.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-dolce-d_apple_pie.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_cheese_creammeet.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_cheese_oysterbacon.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_cheese_shrimptomato.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_oyster_ajillo.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_oyster_buttersaute.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_soup_beconcarubo.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_soup_oystercream.html</loc><lastmod>2026-11-25</lastmod></url>
+<url><loc>https://famires.netaful.jp/items/jollypasta-season-r_soup_seafoodtomato.html</loc><lastmod>2026-11-25</lastmod></url>
 </urlset>

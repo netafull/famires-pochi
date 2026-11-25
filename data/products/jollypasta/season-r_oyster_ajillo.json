@@ -1,0 +1,37 @@
+{
+ "chain": "jollypasta",
+ "product_id": "season-r_oyster_ajillo",
+ "name": "牡蠣のアヒージョ",
+ "category": null,
+ "fair": "季節のおすすめ",
+ "price": 869,
+ "price_excl_tax": 790,
+ "price_max": null,
+ "price_note": "税込。税抜は公式サイトの表示",
+ "price_variants": null,
+ "launch_date": null,
+ "launch_date_source": null,
+ "news_title": null,
+ "news_url": null,
+ "news_date": null,
+ "listed_at": null,
+ "planned_end_text": null,
+ "limited_kind": "フェア",
+ "stores_note": null,
+ "official_url": "https://www.jolly-pasta.co.jp/menu/season/r_oyster_ajillo.html",
+ "first_seen_at": "2026-11-25T20:01:04+09:00",
+ "last_seen_at": "2026-11-25",
+ "status": "on_sale",
+ "ended_observed_at": null,
+ "missed_runs": 0,
+ "price_history": [
+  {
+   "date": "2026-11-25",
+   "price": 869
+  }
+ ],
+ "launch_search_runs": 1,
+ "source_list": [
+  "www.jolly-pasta.co.jp/json/jp_menu.json"
+ ]
+}
