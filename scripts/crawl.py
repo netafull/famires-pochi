@@ -1344,6 +1344,23 @@ def _jollypasta_name_match(name: str, src: dict, all_names: list[str]) -> bool:
                for k in keys)
 
 
+def _jollypasta_quoted_match(name: str, src: dict, all_names: list[str]) -> bool:
+    """記録対象②(フェア記事で名前が挙がった他カテゴリ商品の拾い上げ)専用の照合:
+    記事本文のうち「」で囲まれた文字列だけを相手に、商品名が出てくるか。
+    フェア商品名は記事の中で必ず「」で囲まれる(例: ★「焼きリンゴとバニラアイスのパイ」)一方、
+    説明文の中の一般名(定番の「パンナコッタ」等)は囲まれない。全文を相手にすると説明文の
+    一般名に定番が一致してフェア商品として記録されてしまい、定番はJSONから消えないため
+    記録対象③のルールで終了もしない。開始日の照合(_jollypasta_name_match)は従来どおり
+    見出し・本文の全文を相手にする。"""
+    keys = launch_name_keys(name)
+    if not keys:
+        return False
+    comp = competitor_keys(name, all_names)
+    quoted = " ".join(re.findall(r"「([^」]*)」", src.get("text") or ""))
+    quoted_n = parsers.normalize_name(quoted)
+    return any(count_standalone(quoted_n, k, comp) > 0 for k in keys)
+
+
 def _jollypasta_launch_hit(name: str, src: dict, ref: str, all_names: list[str]) -> dict | None:
     """1本のフェア記事から開始日の hit を作る。照合の窓(記録日の前120日〜後14日)の外の記事は使わない。
     見出し冒頭の日付(記事の launch_date)があればそれを最優先で使う(見出しの「12月1日(火)」は
@@ -1378,7 +1395,8 @@ def _jollypasta_drop_continued(text: str) -> str:
 def crawl_jollypasta(getter, pending: dict, stats: dict, today: str | None = None) -> None:
     """ジョリーパスタ: メニューの正本はJSON(jp_menu.json)。記録対象は
     ①「季節のおすすめ」カテゴリの全商品、②フェア記事(ニュース一覧のメニュー分類で、見出しに
-    「フェア」を含むもの)の本文で名前が挙がった他カテゴリの商品、③記録済みでJSONにまだ載っている商品。
+    「フェア」を含むもの)の本文で「」で囲まれて名前が挙がった他カテゴリの商品(説明文中の
+    一般名には一致させない。_jollypasta_quoted_match)、③記録済みでJSONにまだ載っている商品。
     価格が取れない商品は記録対象にしない。「季節のおすすめ」が0件の回、価格が1件も取れない回は
     「一覧が不完全(構造変更の疑い)」として終了判定をしない。
     開始日はフェア記事の見出し冒頭の日付・本文から取る。照合は**古い記事から順**に行い、
@@ -1459,6 +1477,13 @@ def crawl_jollypasta(getter, pending: dict, stats: dict, today: str | None = Non
                 return s
         return None
 
+    def quoted_source(name: str) -> dict | None:
+        # 記録対象②の判定用。本文の「」で囲まれた名前だけと照合する
+        for s in sources:
+            if _jollypasta_quoted_match(name, s, all_names):
+                return s
+        return None
+
     saved = {p["product_id"]: p for p in load_chain_products(chain)}
     targets: dict[str, dict] = {}
     for pid in season_pids:
@@ -1467,7 +1492,7 @@ def crawl_jollypasta(getter, pending: dict, stats: dict, today: str | None = Non
     for p in products:
         if p["pid"] in targets or p["price"] is None:
             continue
-        if matched_source(p["name"]) is not None:
+        if quoted_source(p["name"]) is not None:
             targets[p["pid"]] = p
     for pid in saved:
         if pid in by_pid and pid not in targets:
@@ -1502,7 +1527,11 @@ def crawl_jollypasta(getter, pending: dict, stats: dict, today: str | None = Non
         return p
 
     def refresh(p, e):
-        if e["fair"]:
+        # 仮置きの「季節のおすすめ」では、保存済みの具体的なフェア名を上書きしない
+        # (フェア記事が一覧・取得上限の範囲から落ちた回に、販売中の季節商品のフェア名が
+        # 正しい名前から仮置きに戻ってしまうのを防ぐ)
+        if e["fair"] and not (e["fair"] == JOLLYPASTA_SEASON
+                              and p.get("fair") not in (None, JOLLYPASTA_SEASON)):
             p["fair"] = e["fair"]
         if e["price_excl_tax"] is not None:
             p["price_excl_tax"] = e["price_excl_tax"]

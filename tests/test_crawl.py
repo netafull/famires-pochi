@@ -1236,6 +1236,39 @@ class TestJollypastaCrawl(unittest.TestCase):
             self.assertFalse(st["jollypasta"]["list_ok"])
             self.assertEqual(pend["jollypasta"]["_suspected_restructure"]["threshold"], 20)
 
+    def test_plain_name_in_description_is_not_picked_up(self):
+        # フェア記事の説明文の中で定番の名前(パンナコッタ)が出ても、記録対象②では拾わない。
+        # フェア商品名は本文で「」で囲まれるが、説明文中の一般名は囲まれない。
+        # 全文照合だった頃は定番のパンナコッタがリンゴのドルチェフェアの商品として記録され、
+        # 定番はJSONから消えないため③のルールで終了もしない不具合があった(レビュー指摘)
+        with TempData():
+            menu = {k: list(v) for k, v in S.JOLLYPASTA_MENU.items()}
+            menu["ドルチェ"] = menu["ドルチェ"] + [
+                {"名称": "パンナコッタ", "金額": "490円(税込539円)",
+                 "詳細URL": "/menu/dolce/d_panna_cotta.html", "カテゴリ": "ドルチェ"}]
+            site = jollypasta_site(menu=menu)
+            site.set(JP_APPLE, S.jollypasta_news_article(
+                date="2026.11.04", title="11月10日(火)「リンゴのドルチェフェア」が始まります！",
+                body=("11月10日（火）より「リンゴのドルチェフェア」がスタート！"
+                      "定番のパンナコッタも一緒にお楽しみいただけます。<br>"
+                      "★「焼きリンゴとバニラアイスのパイ」")))
+            run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertEqual(ids("jollypasta"), ["dolce-d_applepie", "season-r_oyster_ajillo",
+                                                 "season-r_oyster_butter", "season-r_soup_oystercream"])
+
+    def test_placeholder_fair_does_not_overwrite_saved_fair(self):
+        # フェア記事が一覧・取得上限の範囲から落ちた回でも、保存済みの具体的なフェア名は
+        # 仮置きの「季節のおすすめ」に戻らない(レビュー指摘)
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")
+            p = helpers.prod("jollypasta", "season-r_soup_oystercream")
+            self.assertEqual(p["fair"], "窯焼きチーズパスタフェア")
+            site = jollypasta_site(news=[("2026.11.20", "/info/info/20261120.html", "お知らせ",
+                                          "年末年始の営業時間について")])
+            run_chain(crawl.crawl_jollypasta, site, "2026-11-26")
+            p = helpers.prod("jollypasta", "season-r_soup_oystercream")
+            self.assertEqual(p["fair"], "窯焼きチーズパスタフェア")
+
     def test_news_failure_does_not_stop_recording(self):
         with TempData():
             site = jollypasta_site()
