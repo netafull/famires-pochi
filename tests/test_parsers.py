@@ -481,5 +481,85 @@ class TestSteakdonNews(unittest.TestCase):
         self.assertEqual(P.parse_steakdon_news("<html>変わった</html>"), [])
 
 
+class TestJollypastaMenu(unittest.TestCase):
+    def test_items_prices_and_dedup(self):
+        items = P.parse_jollypasta_menu(S.jollypasta_menu_json())
+        self.assertEqual([i["pid"] for i in items],
+                         ["season-r_soup_oystercream", "season-r_oyster_ajillo", "season-r_oyster_butter",
+                          "season-r_mitei", "appetizer-a_teiban", "dolce-d_applepie"])
+        top = items[0]
+        self.assertEqual((top["name"], top["price_excl_tax"], top["price"]),
+                         ("～スープパスタ～ 牡蠣と彩り野菜のクリームスープパスタ", 1490, 1639))
+        self.assertEqual(top["category"], "季節のおすすめ")
+        self.assertEqual(top["official_url"], "https://www.jolly-pasta.co.jp/menu/season/r_soup_oystercream.html")
+        # 前菜にも載る牡蠣のアヒージョは1件だけ残り、所在は「季節のおすすめ」が優先される
+        ajillo = [i for i in items if i["pid"] == "season-r_oyster_ajillo"]
+        self.assertEqual(len(ajillo), 1)
+        self.assertEqual(ajillo[0]["category"], "季節のおすすめ")
+        # 金額が無い商品は価格Noneで返る(対象にするかは巡回側が決める)
+        self.assertIsNone(items[3]["price"])
+        self.assertIsNone(items[3]["price_excl_tax"])
+
+    def test_unread_keys_are_not_in_the_result(self):
+        for i in P.parse_jollypasta_menu(S.jollypasta_menu_json()):
+            self.assertEqual(set(i), {"pid", "name", "price", "price_excl_tax", "category", "official_url"})
+
+    def test_broken_json_raises(self):
+        with self.assertRaises(ValueError):
+            P.parse_jollypasta_menu("{broken")
+
+    def test_missing_season_category_raises(self):
+        with self.assertRaises(ValueError):
+            P.parse_jollypasta_menu('{"前菜": []}')
+
+    def test_row_without_name_or_url_raises(self):
+        with self.assertRaises(ValueError):
+            P.parse_jollypasta_menu('{"季節のおすすめ": [{"名称": "x"}]}')
+
+
+class TestJollypastaNews(unittest.TestCase):
+    def test_index(self):
+        idx = P.parse_jollypasta_news_index(S.jollypasta_news_index([
+            ("2026.11.24", "/info/menu/20261124.html", "メニュー", "12月1日(火)「窯焼きチーズパスタフェア」が始まります！"),
+            ("2026.11.20", "/info/info/20261120.html", "お知らせ", "年末年始の営業時間について"),
+        ]))
+        self.assertEqual(idx[0], {"date": "2026-11-24",
+                                  "title": "12月1日(火)「窯焼きチーズパスタフェア」が始まります！",
+                                  "url": "https://www.jolly-pasta.co.jp/info/menu/20261124.html",
+                                  "category": "メニュー"})
+        self.assertEqual(idx[1]["category"], "お知らせ")
+        self.assertEqual(P.parse_jollypasta_news_index("<html>変わった</html>"), [])
+
+    def test_article_and_headline_launch(self):
+        art = P.parse_jollypasta_news_article(
+            S.jollypasta_news_article(body="★「～窯焼きチーズパスタ～ 牡蠣と燻製ベーコンのクリームソース」"),
+            "https://www.jolly-pasta.co.jp/info/menu/20261124.html")
+        self.assertEqual(art["date"], "2026-11-24")
+        self.assertEqual(art["title"], "12月1日(火)「窯焼きチーズパスタフェア」が始まります！")
+        self.assertEqual(art["launch_date"], "2026-12-01")  # 見出し冒頭の日付。年は掲載日から補う
+        self.assertIn("牡蠣と燻製ベーコンのクリームソース", art["text"])
+        self.assertNotIn("ニュース一覧に戻る", art["text"])  # 本文の後ろのボタンは含めない
+
+    def test_article_year_rollover(self):
+        art = P.parse_jollypasta_news_article(
+            S.jollypasta_news_article(date="2026.12.25", title="1月6日(火)「新春フェア」が始まります！"),
+            "https://www.jolly-pasta.co.jp/info/menu/20261225.html")
+        self.assertEqual(art["launch_date"], "2027-01-06")
+
+    def test_article_without_headline_date(self):
+        art = P.parse_jollypasta_news_article(
+            S.jollypasta_news_article(title="「窯焼きチーズパスタフェア」が始まります！"),
+            "https://www.jolly-pasta.co.jp/info/menu/20261124.html")
+        self.assertIsNone(art["launch_date"])
+
+    def test_article_garbage_is_none(self):
+        self.assertIsNone(P.parse_jollypasta_news_article("<html>変わった</html>", "https://x/"))
+
+    def test_fair_name(self):
+        self.assertEqual(P.jollypasta_fair_name("12月1日(火)「窯焼きチーズパスタフェア」が始まります！"),
+                         "窯焼きチーズパスタフェア")
+        self.assertIsNone(P.jollypasta_fair_name("年末年始の営業時間について"))
+
+
 if __name__ == "__main__":
     unittest.main()

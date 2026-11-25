@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定フェアメニューを巡回し、
-data/products/{dennys|jonathan|cocos|bigboy|joyfull|steakdon}/{id}.json に1商品1ファイルで蓄積する。
+"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの期間限定フェアメニューを巡回し、
+data/products/{dennys|jonathan|cocos|bigboy|joyfull|steakdon|jollypasta}/{id}.json に1商品1ファイルで蓄積する。
 
 このサイトの核は「販売状況の追跡」。公式サイトはフェアが終わると商品を消すので、
 一覧に居た商品が消えたら終了とみなして記録を残す(カフェポチ・ファストフードポチと同じ設計)。
@@ -1324,6 +1324,215 @@ def crawl_steakdon(getter, pending: dict, stats: dict, today: str | None = None)
 
 
 # ---------------------------------------------------------------------------
+# ジョリーパスタ
+# ---------------------------------------------------------------------------
+
+JOLLYPASTA_BASE = parsers.JOLLYPASTA_BASE
+JOLLYPASTA_SEASON = parsers.JOLLYPASTA_SEASON_CATEGORY
+
+
+def _jollypasta_name_match(name: str, src: dict, all_names: list[str]) -> bool:
+    """商品名が記事の見出し・本文に出てくるか(find_launch と同じ照合: 正規化キーと、
+    より長い別商品の名前の中での出現の差し引き)。"""
+    keys = launch_name_keys(name)
+    if not keys:
+        return False
+    comp = competitor_keys(name, all_names)
+    title_n = parsers.normalize_name(src.get("title"))
+    text_n = parsers.normalize_name(src.get("text"))
+    return any(count_standalone(title_n, k, comp) > 0 or count_standalone(text_n, k, comp) > 0
+               for k in keys)
+
+
+def _jollypasta_launch_hit(name: str, src: dict, ref: str, all_names: list[str]) -> dict | None:
+    """1本のフェア記事から開始日の hit を作る。照合の窓(記録日の前120日〜後14日)の外の記事は使わない。
+    見出し冒頭の日付(記事の launch_date)があればそれを最優先で使う(見出しの「12月1日(火)」は
+    launch_date_from_text の対象語が続かないため、find_launch では拾えない)。
+    見出しに日付が無い記事は find_launch(本文の「M月D日より」)に任せる。"""
+    try:
+        d = datetime.date.fromisoformat(src.get("date") or "")
+        r = datetime.date.fromisoformat(ref)
+    except ValueError:
+        return None
+    if not (r - datetime.timedelta(days=LAUNCH_WINDOW_BEFORE_DAYS) <= d
+            <= r + datetime.timedelta(days=LAUNCH_WINDOW_AFTER_DAYS)):
+        return None
+    if not _jollypasta_name_match(name, src, all_names):
+        return None
+    if src.get("launch_date"):
+        return {"launch_date": src["launch_date"], "title": src.get("title"),
+                "url": src.get("url"), "date": src.get("date"), "via": "title"}
+    return find_launch(name, [src], ref, all_names)
+
+
+def _jollypasta_drop_continued(text: str) -> str:
+    """「引き続き販売」の文を、照合用の本文から落とす。継続販売の告知は新発売の告知ではなく、
+    その文で名前が出ただけの商品に、そのフェアの開始日が付いたり、フェア対象に拾われたりするのを防ぐ
+    (例: 窯焼きチーズパスタフェアの記事で「牡蠣とほうれん草のバターソテーは引き続き販売します！」)。
+    本文は ★ の行が <br> 区切りで並び、「引き続き」の文は最後の ★ 行と地続きになるため、
+    文の区切り(。！)と ★ に加えて 」(商品名を囲む括弧の閉じ)でも割ってから落とす。"""
+    parts = re.split(r"(?<=[。！」])|\s*★\s*", text or "")
+    return " ".join(p for p in parts if "引き続き" not in p)
+
+
+def crawl_jollypasta(getter, pending: dict, stats: dict, today: str | None = None) -> None:
+    """ジョリーパスタ: メニューの正本はJSON(jp_menu.json)。記録対象は
+    ①「季節のおすすめ」カテゴリの全商品、②フェア記事(ニュース一覧のメニュー分類で、見出しに
+    「フェア」を含むもの)の本文で名前が挙がった他カテゴリの商品、③記録済みでJSONにまだ載っている商品。
+    価格が取れない商品は記録対象にしない。「季節のおすすめ」が0件の回、価格が1件も取れない回は
+    「一覧が不完全(構造変更の疑い)」として終了判定をしない。
+    開始日はフェア記事の見出し冒頭の日付・本文から取る。照合は**古い記事から順**に行い、
+    最初に一致した記事の開始日を使う(新しいフェアの記事にも名前が出る「引き続き販売」の商品に、
+    新しい開始日が付かないようにするため。「引き続き」の文自体も照合から落としている)。
+    終了日は記事に明記されないため、JSONからの消失で判定する(共通エンジン)。"""
+    chain = "jollypasta"
+    run = Run(chain, pending, stats, today)
+    st, today, now = run.st, run.today, run.now
+    robots = Robots(getter, chain, st)
+    complete = True
+    entries: dict[str, dict] = {}
+    try:
+        if not robots.allowed(JOLLYPASTA_BASE, parsers.JOLLYPASTA_MENU_JSON_PATH):
+            print("[skip] jollypasta: robots.txtでDisallow", file=sys.stderr)
+            return
+        raw = getter(chain, JOLLYPASTA_BASE + parsers.JOLLYPASTA_MENU_JSON_PATH)
+        st["list_requests"] += 1
+        try:
+            products = parsers.parse_jollypasta_menu(raw)
+        except ValueError as e:
+            print(f"[warn] jollypasta {e}", file=sys.stderr)
+            return
+    except BlockedError as e:
+        run.block("list", e)
+        return
+    except Exception as e:  # noqa: BLE001
+        print(f"[warn] jollypasta 一覧取得失敗: {e}", file=sys.stderr)
+        return
+
+    by_pid = {p["pid"]: p for p in products}
+    season_pids = {p["pid"] for p in products if p["category"] == JOLLYPASTA_SEASON}
+    if not season_pids:
+        print("[warn] jollypasta: 「季節のおすすめ」が0件(構造変更の疑い。この回は終了判定をしない)",
+              file=sys.stderr)
+        return
+    if not any(by_pid[pid]["price"] is not None for pid in season_pids):
+        print("[warn] jollypasta: 「季節のおすすめ」で価格が1件も取れない(構造変更の疑い)", file=sys.stderr)
+        complete = False
+
+    # フェア記事は、開始日の照合だけでなく他カテゴリのフェア商品の拾い上げにも使うので、ここでまとめて取る
+    max_articles = int(CONFIG.get("jollypasta_news_max_articles", 6))
+    sources: list[dict] = []
+    try:
+        if robots.allowed(JOLLYPASTA_BASE, parsers.JOLLYPASTA_NEWS_PATH):
+            index = parsers.parse_jollypasta_news_index(
+                getter(chain, JOLLYPASTA_BASE + parsers.JOLLYPASTA_NEWS_PATH))
+            st["detail_requests"] += 1
+            fairs = [n for n in index if n["category"] == "メニュー" and "フェア" in n["title"]]
+            for n in fairs[:max_articles]:
+                path = n["url"][len(JOLLYPASTA_BASE):] if n["url"].startswith(JOLLYPASTA_BASE) else n["url"]
+                if not robots.allowed(JOLLYPASTA_BASE, path):
+                    continue
+                try:
+                    art = parsers.parse_jollypasta_news_article(getter(chain, n["url"]), n["url"])
+                    st["detail_requests"] += 1
+                except BlockedError:
+                    raise
+                except Exception as e:  # noqa: BLE001  記事1本の失敗は開始日なしで続行
+                    print(f"[warn] jollypasta ニュース {n['url']}: {e}", file=sys.stderr)
+                    continue
+                if art:
+                    art["text"] = _jollypasta_drop_continued(art["text"])
+                    sources.append(art)
+    except BlockedError as e:
+        run.block("news", e)
+        return
+    except Exception as e:  # noqa: BLE001  ニュースが取れなくても季節カテゴリの記録は続ける
+        print(f"[warn] jollypasta ニュース一覧取得失敗(開始日なしで続行): {e}", file=sys.stderr)
+        sources = []
+    sources.sort(key=lambda s: s.get("date") or "")  # 照合は古い記事を優先する
+
+    all_names = [p["name"] for p in products]
+
+    def matched_source(name: str) -> dict | None:
+        for s in sources:
+            if _jollypasta_name_match(name, s, all_names):
+                return s
+        return None
+
+    saved = {p["product_id"]: p for p in load_chain_products(chain)}
+    targets: dict[str, dict] = {}
+    for pid in season_pids:
+        if by_pid[pid]["price"] is not None:
+            targets[pid] = by_pid[pid]
+    for p in products:
+        if p["pid"] in targets or p["price"] is None:
+            continue
+        if matched_source(p["name"]) is not None:
+            targets[p["pid"]] = p
+    for pid in saved:
+        if pid in by_pid and pid not in targets:
+            targets[pid] = by_pid[pid]  # 記録済みの商品は、JSONに現存する間は対象にし続ける(終了判定の前提)
+
+    for pid, p in targets.items():
+        src = matched_source(p["name"])
+        fair = parsers.jollypasta_fair_name(src["title"]) if src else None
+        if not fair:
+            if pid in season_pids:
+                fair = JOLLYPASTA_SEASON  # フェア記事で特定できない季節商品の仮置き
+            elif pid in saved:
+                fair = saved[pid].get("fair")
+        entries[pid] = {
+            "pid": pid, "name": p["name"], "price": p["price"], "price_max": None,
+            "price_excl_tax": p["price_excl_tax"], "fair": fair,
+            "official_url": p["official_url"],
+        }
+    if not entries:
+        print("[warn] jollypasta: 記録対象が0件(構造変更の疑い。この回は終了判定をしない)", file=sys.stderr)
+        return
+
+    def build(e):
+        p = base_product(chain, e["pid"], e["name"], now, today)
+        p["fair"] = e["fair"]
+        p["limited_kind"] = "フェア"
+        p["price_excl_tax"] = e["price_excl_tax"]
+        p["price_note"] = "税込。税抜は公式サイトの表示"
+        set_initial_price(p, e["price"], None, today)
+        p["official_url"] = e["official_url"]
+        p["source_list"] = ["www.jolly-pasta.co.jp" + parsers.JOLLYPASTA_MENU_JSON_PATH]
+        return p
+
+    def refresh(p, e):
+        if e["fair"]:
+            p["fair"] = e["fair"]
+        if e["price_excl_tax"] is not None:
+            p["price_excl_tax"] = e["price_excl_tax"]
+        if e["official_url"] != p.get("official_url"):
+            p["official_url"] = e["official_url"]
+
+    def enrich(p, e, is_new):
+        if not (needs_launch(p) and (is_new or int(p.get("launch_search_runs") or 0) < LAUNCH_SEARCH_RUNS_MAX)):
+            return
+        hit = None
+        for s in sources:  # 古い記事から順に照合し、最初に一致した記事の開始日を使う
+            hit = _jollypasta_launch_hit(p["name"], s, launch_ref(p), all_names)
+            if hit:
+                break
+        if hit is None:
+            base = re.split(r"[～〜~]", p["name"])[0]  # デニーズと同じく、副題(～以降)を落とした名前でも照合する
+            if base != p["name"]:
+                for s in sources:
+                    hit = _jollypasta_launch_hit(base, s, launch_ref(p), all_names)
+                    if hit:
+                        break
+        if hit:
+            apply_launch(p, hit, "official_news")
+        else:
+            p["launch_search_runs"] = int(p.get("launch_search_runs") or 0) + 1
+
+    run.finish(entries, complete, build, refresh, enrich)
+
+
+# ---------------------------------------------------------------------------
 # 実行
 # ---------------------------------------------------------------------------
 
@@ -1394,7 +1603,7 @@ def save_run_summary(stats: dict[str, dict], streaks: dict[str, int] | None = No
     RUN_SUMMARY.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
 
-CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos, "bigboy": crawl_bigboy, "joyfull": crawl_joyfull, "steakdon": crawl_steakdon}
+CRAWLERS = {"dennys": crawl_dennys, "jonathan": crawl_jonathan, "cocos": crawl_cocos, "bigboy": crawl_bigboy, "joyfull": crawl_joyfull, "steakdon": crawl_steakdon, "jollypasta": crawl_jollypasta}
 
 
 def main(argv: list[str] | None = None) -> int:

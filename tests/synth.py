@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+
 
 def dennys_menu(fairs=(("/menu/collaboration17/", "飯田商店監修「味噌らぁ麺」"), ("/menu/oimo/", "蜜いもデザート"))) -> str:
     lis = "".join(
@@ -258,3 +260,61 @@ def steakdon_news(entries=()) -> str:
         rows += (f'<tr>\n<td class="news_date">{d}</td>\n'
                  f'<td><a href="news_detail.html?num={num}">{title}</a></td>\n</tr>\n')
     return f'<html><body><table class="news_table">{rows}</table></body></html>'
+
+
+# ジョリーパスタのメニューJSON(jp_menu.json)の一部。パーサが読まないキー(説明・カロリー・NEW等)も
+# 実物どおり入れてある(読まないことの確認用)。金額が無い商品・複数カテゴリに載る商品も含む
+JOLLYPASTA_MENU = {
+    "季節のおすすめ": [
+        {"名称": "～スープパスタ～ 牡蠣と彩り野菜のクリームスープパスタ", "金額": "1,490円(税込1,639円)",
+         "詳細URL": "/menu/season/r_soup_oystercream.html", "カテゴリ": "季節のおすすめ",
+         "説明": "説明文は読まない", "カロリー": "999kcal", "NEW": "1"},
+        {"名称": "牡蠣のアヒージョ", "金額": "790円(税込869円)",
+         "詳細URL": "/menu/season/r_oyster_ajillo.html", "カテゴリ": "季節のおすすめ"},
+        {"名称": "牡蠣とほうれん草のバターソテー", "金額": "690円(税込759円)",
+         "詳細URL": "/menu/season/r_oyster_butter.html", "カテゴリ": "季節のおすすめ"},
+        {"名称": "価格未定の季節商品", "金額": None,
+         "詳細URL": "/menu/season/r_mitei.html", "カテゴリ": "季節のおすすめ"},
+    ],
+    "前菜": [
+        {"名称": "牡蠣のアヒージョ", "金額": "790円(税込869円)",
+         "詳細URL": "/menu/season/r_oyster_ajillo.html", "カテゴリ": "前菜"},
+        {"名称": "定番の前菜", "金額": "490円(税込539円)",
+         "詳細URL": "/menu/appetizer/a_teiban.html", "カテゴリ": "前菜"},
+    ],
+    "ドルチェ": [
+        {"名称": "焼きリンゴとバニラアイスのパイ", "金額": "590円(税込649円)",
+         "詳細URL": "/menu/dolce/d_applepie.html", "カテゴリ": "ドルチェ"},
+    ],
+}
+
+
+def jollypasta_menu_json(menu=JOLLYPASTA_MENU) -> str:
+    return json.dumps(menu, ensure_ascii=False)
+
+
+def jollypasta_news_index(entries=()) -> str:
+    """entries: [(日付 2026.11.24, href, 分類, 見出し)]。実物どおり属性は複数行に分かれる"""
+    lis = ""
+    for d, href, cat, title in entries:
+        lis += (f'<li class="news_list_item" data-href="{href}"\n'
+                f'        data-date="{d}" data-category="{cat}"\n'
+                f'        data-title="{title}">\n'
+                f'    <a href="{href}"><span class="news_date">{d}</span></a>\n</li>\n')
+    return f'<html><body><div class="news_list"><ul>\n{lis}</ul></div></body></html>'
+
+
+def jollypasta_news_article(date: str = "2026.11.24",
+                            title: str = "12月1日(火)「窯焼きチーズパスタフェア」が始まります！",
+                            body: str = "") -> str:
+    """記事ページ。body は news_detail_txt の中身(★行の商品リスト等)"""
+    return f"""<html><body>
+<div class="top_news_date">{date}</div>
+<div class="top_news_title">{title}</div>
+<div class="news_detail_txt" style="text-align: left;">
+<p>{body}</p>
+<div class="submenu_button">
+<div class="btn_m"><a href="/info/"><span>ニュース一覧に戻る</span></a></div>
+</div>
+</div>
+</body></html>"""

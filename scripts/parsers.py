@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの公式ページのパーサ。
+"""デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの公式ページのパーサ。
 
 ネットワークには触らない純粋関数だけを置く(合成フィクスチャでテストする)。
 公式のHTML/JSONの構造が変わったら、まずここが壊れる。壊れ方は2通りに分ける:
@@ -703,3 +703,156 @@ def parse_steakdon_news(html: str) -> list[dict]:
                     "title": clean_text(m.group(5)), "text": "",
                     "url": STEAKDON_BASE + "/" + m.group(4)})
     return out
+
+
+# ---------------------------------------------------------------------------
+# ジョリーパスタ (www.jolly-pasta.co.jp)
+# ---------------------------------------------------------------------------
+
+JOLLYPASTA_BASE = "https://www.jolly-pasta.co.jp"
+JOLLYPASTA_MENU_JSON_PATH = "/json/jp_menu.json"
+JOLLYPASTA_NEWS_PATH = "/info/"
+JOLLYPASTA_MENU_PATH = "/menu/"
+JOLLYPASTA_SEASON_CATEGORY = "季節のおすすめ"
+
+
+def _jollypasta_pid(url_path: str | None) -> str:
+    """詳細URLのパスから識別キーを作る(/menu/season/r_soup_oystercream.html → season-r_soup_oystercream)。
+    ココスと同じく、パスの区切りを「-」にし、末尾の .html を落とす。"""
+    p = re.sub(r"^https?://[^/]+", "", (url_path or "").strip())
+    p = p.split("?")[0].split("#")[0]
+    if p.startswith("/menu/"):
+        p = p[len("/menu/"):]
+    else:
+        p = p.strip("/")
+    p = re.sub(r"\.html$", "", p)
+    return re.sub(r"[^A-Za-z0-9_\-]+", "-", p).strip("-")
+
+
+def parse_jollypasta_menu(json_text: str) -> list[dict]:
+    """メニューJSON(jp_menu.json)から [{pid, name, price, price_excl_tax, category, official_url}]。
+    JSON は「カテゴリ名 → 商品の配列」で、商品は 名称・金額・詳細URL を持つ。ここで読むキーは
+    この3つとカテゴリだけ(説明・画像URL・カロリー・アレルゲン非掲載・NEW・RENEW・スタート は読まない)。
+    価格は「1,490円(税込1,639円)」の書式で、共通の parse_price_pair で分解する。金額が無い・
+    読めない商品は price/price_excl_tax を None にして返す(対象にするかは呼び出し側が決める)。
+    識別キーは詳細URLのパス。同じ商品が複数カテゴリに載るときは1件だけ残し、カテゴリは
+    「季節のおすすめ」を優先する(所在の判別は呼び出し側の内部処理だけに使う)。
+    JSON として壊れている・「季節のおすすめ」キーが無い・行の構造が違う場合は ValueError
+    (構造変更の疑い)。"""
+    try:
+        data = json.loads(json_text)
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"ジョリーパスタ: メニューJSONが読めない: {e}") from e
+    if not isinstance(data, dict) or JOLLYPASTA_SEASON_CATEGORY not in data:
+        raise ValueError("ジョリーパスタ: メニューJSONに「季節のおすすめ」カテゴリが無い")
+    items: list[dict] = []
+    by_pid: dict[str, dict] = {}
+    for category, rows in data.items():
+        if not isinstance(rows, list):
+            raise ValueError(f"ジョリーパスタ: カテゴリ「{category}」が配列でない")
+        for row in rows:
+            if not isinstance(row, dict) or "名称" not in row or "詳細URL" not in row:
+                raise ValueError("ジョリーパスタ: 商品の行に名称・詳細URLが無い")
+            name = clean_text(row.get("名称"))
+            url_path = (row.get("詳細URL") or "").strip()
+            if not name or not url_path:
+                continue
+            pid = _jollypasta_pid(url_path) or stable_id("jollypasta", name)
+            pp = parse_price_pair(row.get("金額"))
+            if pid in by_pid:
+                # 複数カテゴリに載る商品は1件だけ。「季節のおすすめ」に載っていればそちらを所在にする
+                if category == JOLLYPASTA_SEASON_CATEGORY:
+                    by_pid[pid]["category"] = category
+                continue
+            item = {"pid": pid, "name": name,
+                    "price_excl_tax": pp[0] if pp else None,
+                    "price": pp[1] if pp else None,
+                    "category": category,
+                    "official_url": JOLLYPASTA_BASE + (url_path if url_path.startswith("/") else "/" + url_path)}
+            by_pid[pid] = item
+            items.append(item)
+    return items
+
+
+def parse_jollypasta_news_index(html: str) -> list[dict]:
+    """ニュース一覧(/info/)から [{date: YYYY-MM-DD, title, url, category}]。
+    行は <li data-href="/info/menu/20261124.html" data-date="2026.11.24" data-category="メニュー"
+    data-title="12月1日(火)「窯焼きチーズパスタフェア」が始まります！"> の属性で並ぶ。
+    構造が違えば空のリスト(開始日なしで続行)。"""
+    h = _strip_comments(html)
+    out = []
+    for m in re.finditer(r'<li\b[^>]*\bdata-href="[^"]+"[^>]*>', h):
+        tag = m.group(0)
+
+        def attr(name: str) -> str:
+            a = re.search(name + r'="([^"]*)"', tag)
+            return html_lib.unescape(a.group(1)) if a else ""
+
+        d = re.fullmatch(r"\s*(\d{4})\.(\d{1,2})\.(\d{1,2})\s*", attr("data-date"))
+        href = attr("data-href")
+        if not d or not href:
+            continue
+        url = href if href.startswith("http") else JOLLYPASTA_BASE + (href if href.startswith("/") else "/" + href)
+        out.append({"date": f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}",
+                    "title": clean_text(attr("data-title")), "url": url,
+                    "category": clean_text(attr("data-category"))})
+    return out
+
+
+def _jollypasta_headline_launch(title: str | None, date_iso: str) -> str | None:
+    """フェア記事の見出し冒頭の「12月1日(火)」→ "2026-12-01"。
+    見出しは開始日で始まる(「12月1日(火)「窯焼きチーズパスタフェア」が始まります！」)。
+    「始まります」は launch_dates_in_text の対象語(より・から・発売…)に含まれないため、
+    共通の抽出では拾えない。年は掲載日から補い、半年以上ずれる場合は前後の年に寄せる
+    (launch_dates_in_text と同じ寄せ方)。冒頭に日付が無ければ None。"""
+    m = re.match(r"\s*(\d{1,2})月(\d{1,2})日", title or "")
+    if not m:
+        return None
+    try:
+        ref = datetime.date.fromisoformat(date_iso)
+        cand = datetime.date(ref.year, int(m.group(1)), int(m.group(2)))
+        delta = (cand - ref).days
+        if delta > 180:
+            cand = datetime.date(ref.year - 1, cand.month, cand.day)
+        elif delta < -180:
+            cand = datetime.date(ref.year + 1, cand.month, cand.day)
+    except ValueError:
+        return None
+    return cand.isoformat()
+
+
+def jollypasta_fair_name(title: str | None) -> str | None:
+    """見出しの「…フェア」をフェア名として取り出す
+    (「12月1日(火)「窯焼きチーズパスタフェア」が始まります！」→「窯焼きチーズパスタフェア」)。
+    取れなければ None。"""
+    for pat in (r"「([^」]*フェア[^」]*)」", r"『([^』]*フェア[^』]*)』"):
+        m = re.search(pat, title or "")
+        if m:
+            return clean_text(m.group(1))
+    return None
+
+
+def parse_jollypasta_news_article(html: str, url: str) -> dict | None:
+    """ニュース記事から {date, title, text, url, launch_date}。
+    date は .top_news_date(「2026.11.24」)、title は .top_news_title、text は .news_detail_txt の
+    本文を平文にしたもの(保存はしない。開始日の照合と、フェア対象の拾い上げだけに使う)。
+    launch_date は見出し冒頭の日付(_jollypasta_headline_launch)。掲載日か見出しが取れなければ
+    None(その記事は照合に使わない)。"""
+    h = _strip_comments(html)
+    d = re.search(r'<div[^>]*class="[^"]*top_news_date[^"]*"[^>]*>\s*(\d{4})\.(\d{1,2})\.(\d{1,2})\s*</div>', h)
+    t = re.search(r'<div[^>]*class="[^"]*top_news_title[^"]*"[^>]*>(.*?)</div>', h, re.S)
+    if not d or not t:
+        return None
+    date = f"{int(d.group(1)):04d}-{int(d.group(2)):02d}-{int(d.group(3)):02d}"
+    title = clean_text(t.group(1))
+    body = ""
+    b = re.search(r'<div[^>]*class="[^"]*news_detail_txt[^"]*"[^>]*>', h)
+    if b:
+        chunk = h[b.end(): b.end() + 20000]
+        cut = chunk.find("submenu_button")  # 本文の後ろの「ニュース一覧に戻る」ボタンは本文ではない
+        if cut >= 0:
+            start = chunk.rfind("<div", 0, cut)
+            chunk = chunk[:start if start >= 0 else cut]
+        body = strip_html(chunk)
+    return {"date": date, "title": title, "text": body, "url": url,
+            "launch_date": _jollypasta_headline_launch(title, date)}

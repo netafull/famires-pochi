@@ -79,6 +79,33 @@ def steakdon_site(items=S.STEAKDON_ITEMS, news=SD_NEWS_ENTRIES):
     return s
 
 
+JP = "https://www.jolly-pasta.co.jp"
+JP_JSON = JP + "/json/jp_menu.json"
+JP_INFO = JP + "/info/"
+JP_CHEESE = JP + "/info/menu/20261124.html"
+JP_APPLE = JP + "/info/menu/20261104.html"
+JP_NEWS_ENTRIES = [
+    ("2026.11.24", "/info/menu/20261124.html", "メニュー", "12月1日(火)「窯焼きチーズパスタフェア」が始まります！"),
+    ("2026.11.04", "/info/menu/20261104.html", "メニュー", "11月10日(火)「リンゴのドルチェフェア」が始まります！"),
+    ("2026.11.20", "/info/info/20261120.html", "お知らせ", "年末年始の営業時間について"),
+]
+JP_CHEESE_BODY = ("12月1日（火）より「窯焼きチーズパスタフェア」がスタート！<br>"
+                  "★「～スープパスタ～ 牡蠣と彩り野菜のクリームスープパスタ」<br>"
+                  "さらに、牡蠣とほうれん草のバターソテーは引き続き販売します！")
+JP_APPLE_BODY = "11月10日（火）より「リンゴのドルチェフェア」がスタート！<br>★「焼きリンゴとバニラアイスのパイ」"
+
+
+def jollypasta_site(menu=S.JOLLYPASTA_MENU, news=JP_NEWS_ENTRIES):
+    s = FakeSite()
+    s.set(JP + "/robots.txt", NotFoundError("404"))
+    s.set(JP_JSON, S.jollypasta_menu_json(menu))
+    s.set(JP_INFO, S.jollypasta_news_index(news))
+    s.set(JP_CHEESE, S.jollypasta_news_article(body=JP_CHEESE_BODY))
+    s.set(JP_APPLE, S.jollypasta_news_article(
+        date="2026.11.04", title="11月10日(火)「リンゴのドルチェフェア」が始まります！", body=JP_APPLE_BODY))
+    return s
+
+
 def ids(chain):
     return sorted(p["product_id"] for p in crawl.load_chain_products(chain))
 
@@ -196,11 +223,11 @@ class TestConfig(unittest.TestCase):
 
     def test_limits_and_thresholds_from_the_brief(self):
         cfg = crawl.CONFIG
-        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jonathan", "joyfull", "steakdon"])
-        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25, "steakdon": 10})
-        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20, "steakdon": 15})
+        self.assertEqual(sorted(c["slug"] for c in cfg["chains"]), ["bigboy", "cocos", "dennys", "jollypasta", "jonathan", "joyfull", "steakdon"])
+        self.assertEqual(cfg["max_requests_per_run"], {"dennys": 25, "jonathan": 5, "cocos": 10, "bigboy": 20, "joyfull": 25, "steakdon": 10, "jollypasta": 15})
+        self.assertEqual(cfg["new_burst_min_by_chain"], {"dennys": 20, "jonathan": 15, "cocos": 20, "bigboy": 15, "joyfull": 20, "steakdon": 15, "jollypasta": 20})
         self.assertEqual(cfg["new_burst_ratio"], 0.6)
-        for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull", "steakdon"):
+        for c in ("dennys", "jonathan", "cocos", "bigboy", "joyfull", "steakdon", "jollypasta"):
             self.assertGreaterEqual(cfg["request_interval_seconds"][c], 3)
 
     def test_site_identity_and_ads(self):
@@ -918,7 +945,7 @@ class TestHealthAndSummary(unittest.TestCase):
 
     def test_main_rejects_unknown_chain(self):
         self.assertEqual(crawl.main(["starbucks"]), 2)
-        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jonathan", "joyfull", "steakdon"])
+        self.assertEqual(sorted(crawl.CRAWLERS), ["bigboy", "cocos", "dennys", "jollypasta", "jonathan", "joyfull", "steakdon"])
 
     def test_one_chain_exception_does_not_stop_the_other(self):
         def boom(getter, pending, stats, today=None):
@@ -1073,5 +1100,150 @@ class TestSteakdonCrawl(unittest.TestCase):
             self.assertEqual(st["steakdon"]["new_products"], 0)
             self.assertFalse(st["steakdon"]["list_ok"])
             self.assertEqual(pend["steakdon"]["_suspected_restructure"]["threshold"], 15)
+
+
+class TestJollypastaCrawl(unittest.TestCase):
+    def test_first_run_records_season_and_fair_items_with_facts_only(self):
+        with TempData():
+            site = jollypasta_site()
+            _, st = run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertTrue(st["jollypasta"]["list_ok"])
+            # 季節のおすすめ(価格あり3件)+ フェア記事で名前が挙がったドルチェ1件。価格の無い季節商品と、
+            # どの記事にも出ない定番の前菜は記録しない
+            self.assertEqual(ids("jollypasta"), ["dolce-d_applepie", "season-r_oyster_ajillo",
+                                                 "season-r_oyster_butter", "season-r_soup_oystercream"])
+            p = helpers.prod("jollypasta", "season-r_soup_oystercream")
+            self.assertEqual((p["name"], p["price"], p["price_excl_tax"]),
+                             ("～スープパスタ～ 牡蠣と彩り野菜のクリームスープパスタ", 1639, 1490))
+            self.assertEqual(p["fair"], "窯焼きチーズパスタフェア")
+            self.assertEqual(p["limited_kind"], "フェア")
+            self.assertIsNone(p["category"])
+            self.assertIsNone(p["planned_end_text"])
+            self.assertIsNone(p["price_max"])
+            self.assertEqual(p["official_url"], JP + "/menu/season/r_soup_oystercream.html")
+            self.assertEqual(p["source_list"], ["www.jolly-pasta.co.jp/json/jp_menu.json"])
+            self.assertEqual((p["launch_date"], p["launch_date_source"]), ("2026-12-01", "official_news"))
+            self.assertEqual(p["news_url"], JP_CHEESE)
+            blob = json.dumps(p, ensure_ascii=False)
+            for k in ("説明文は読まない", "999kcal", "image", "photo", "description", "nutrition", "allergen"):
+                self.assertNotIn(k, blob)
+
+    def test_cross_category_fair_item_gets_launch_date(self):
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")
+            p = helpers.prod("jollypasta", "dolce-d_applepie")
+            self.assertEqual(p["fair"], "リンゴのドルチェフェア")
+            self.assertEqual((p["launch_date"], p["launch_date_source"]), ("2026-11-10", "official_news"))
+            self.assertEqual(p["news_url"], JP_APPLE)
+
+    def test_continued_sales_mention_does_not_set_launch_date(self):
+        # 牡蠣とほうれん草のバターソテーは、チーズパスタフェアの記事では「引き続き販売」の文でしか
+        # 名前が出ない。新しいフェアの開始日(12月1日)が付いてはいけない
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")
+            p = helpers.prod("jollypasta", "season-r_oyster_butter")
+            self.assertIsNone(p["launch_date"])
+            self.assertEqual(p["fair"], "季節のおすすめ")  # フェア記事で特定できない季節商品の仮置き
+
+    def test_abbreviated_name_gets_recording_start(self):
+        # 牡蠣のアヒージョは記事本文で略記される想定(フィクスチャでは名前自体が出ない)。開始日は取れない
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")
+            p = helpers.prod("jollypasta", "season-r_oyster_ajillo")
+            self.assertIsNone(p["launch_date"])
+            self.assertEqual(p["fair"], "季節のおすすめ")
+
+    def test_oldest_article_wins_for_launch_date(self):
+        # 同じ商品が古いフェア記事と新しいフェア記事の両方に名前が出るときは、古い記事の開始日を使う
+        with TempData():
+            site = jollypasta_site()
+            soup = JP + "/info/menu/20261027.html"
+            site.set(JP_INFO, S.jollypasta_news_index([
+                ("2026.11.24", "/info/menu/20261124.html", "メニュー", "12月1日(火)「窯焼きチーズパスタフェア」が始まります！"),
+                ("2026.10.27", "/info/menu/20261027.html", "メニュー", "11月3日(火)「あったかスープパスタフェア」が始まります！"),
+            ]))
+            site.set(JP_CHEESE, S.jollypasta_news_article(body="★「牡蠣とほうれん草のバターソテー」"))
+            site.set(soup, S.jollypasta_news_article(
+                date="2026.10.27", title="11月3日(火)「あったかスープパスタフェア」が始まります！",
+                body="★「牡蠣とほうれん草のバターソテー」"))
+            run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            p = helpers.prod("jollypasta", "season-r_oyster_butter")
+            self.assertEqual(p["launch_date"], "2026-11-03")
+            self.assertEqual(p["fair"], "あったかスープパスタフェア")
+            self.assertEqual(p["news_url"], soup)
+
+    def test_requests_within_limit(self):
+        with TempData():
+            site = jollypasta_site()
+            run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertLessEqual(len(site.calls), crawl.CONFIG["max_requests_per_run"]["jollypasta"])
+            self.assertEqual(len(site.calls), 5)  # robots + JSON + ニュース一覧 + フェア記事2本
+
+    def test_ended_after_two_misses_on_different_days(self):
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")
+            menu2 = {k: [r for r in v if r["詳細URL"] != "/menu/dolce/d_applepie.html"]
+                     for k, v in S.JOLLYPASTA_MENU.items()}
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(menu=menu2), "2026-11-26")
+            p = helpers.prod("jollypasta", "dolce-d_applepie")
+            self.assertEqual((p["status"], p["missed_runs"]), ("on_sale", 1))
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(menu=menu2), "2026-11-27")
+            p = helpers.prod("jollypasta", "dolce-d_applepie")
+            self.assertEqual((p["status"], p["ended_observed_at"]), ("ended", "2026-11-27"))
+
+    def test_season_without_any_price_is_incomplete(self):
+        with TempData():
+            menu = {"季節のおすすめ": [
+                {"名称": "価格の無い季節商品", "金額": None, "詳細URL": "/menu/season/x.html",
+                 "カテゴリ": "季節のおすすめ"}]}
+            _, st = run_chain(crawl.crawl_jollypasta, jollypasta_site(menu=menu), "2026-11-25")
+            self.assertFalse(st["jollypasta"]["list_ok"])
+            self.assertEqual(ids("jollypasta"), [])
+
+    def test_missing_season_category_is_list_failed(self):
+        with TempData():
+            menu = {"前菜": [{"名称": "前菜だけ", "金額": "100円(税込110円)",
+                              "詳細URL": "/menu/appetizer/a.html", "カテゴリ": "前菜"}]}
+            _, st = run_chain(crawl.crawl_jollypasta, jollypasta_site(menu=menu), "2026-11-25")
+            self.assertFalse(st["jollypasta"]["list_ok"])
+            self.assertEqual(ids("jollypasta"), [])
+
+    def test_blocked_stops_without_workaround(self):
+        with TempData():
+            site = jollypasta_site()
+            site.blocked_hosts.add("jolly-pasta.co.jp")
+            _, st = run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertTrue(st["jollypasta"]["blocked"])
+            self.assertEqual(ids("jollypasta"), [])
+
+    def test_robots_disallow_skips(self):
+        with TempData():
+            site = jollypasta_site()
+            site.set(JP + "/robots.txt", "User-agent: *\nDisallow: /json/\n")
+            run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertEqual(ids("jollypasta"), [])
+            self.assertNotIn(JP_JSON, site.calls)
+
+    def test_burst_guard_holds_a_restructure(self):
+        with TempData():
+            run_chain(crawl.crawl_jollypasta, jollypasta_site(), "2026-11-25")  # baseline: 4件
+            many = {"季節のおすすめ": [
+                {"名称": f"全く別の新作{i}", "金額": "500円(税込550円)",
+                 "詳細URL": f"/menu/season/n{i}.html", "カテゴリ": "季節のおすすめ"}
+                for i in range(25)]}
+            pend, st = run_chain(crawl.crawl_jollypasta, jollypasta_site(menu=many), "2026-11-26")
+            self.assertEqual(st["jollypasta"]["new_products"], 0)
+            self.assertFalse(st["jollypasta"]["list_ok"])
+            self.assertEqual(pend["jollypasta"]["_suspected_restructure"]["threshold"], 20)
+
+    def test_news_failure_does_not_stop_recording(self):
+        with TempData():
+            site = jollypasta_site()
+            site.set(JP_INFO, RuntimeError("timeout"))
+            _, st = run_chain(crawl.crawl_jollypasta, site, "2026-11-25")
+            self.assertTrue(st["jollypasta"]["list_ok"])
+            self.assertEqual(ids("jollypasta"), ["season-r_oyster_ajillo", "season-r_oyster_butter",
+                                                 "season-r_soup_oystercream"])
+            self.assertTrue(all(p["launch_date"] is None for p in crawl.load_chain_products("jollypasta")))
 
 

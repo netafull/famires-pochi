@@ -174,7 +174,7 @@ class TestLists(unittest.TestCase):
         self.assertNotIn("カロリー順", h)
         self.assertEqual(len(re.findall(r"<h1[ >]", h)), 1)
         self.assertIn('"name": "ファミレスポチ"', h)
-        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどんの期間限定メニュー記録</title>", h)
+        self.assertIn("<title>ファミレスポチ｜デニーズ・ジョナサン・ココス・ビッグボーイ・ジョイフル・ステーキのどん・ジョリーパスタの期間限定メニュー記録</title>", h)
 
     def test_card_has_no_image_besides_category_icon(self):
         for m in re.finditer(r"<img[^>]+>", G.render_card(self.items[0])):
@@ -256,6 +256,8 @@ class TestChainColors(unittest.TestCase):
         self.assertIn("--cocos: #FFB74D", css)
         self.assertIn("--joyfull: #6A1B9A", css)
         self.assertIn("--steakdon: #6D4C41", css)
+        self.assertIn("--jollypasta: #00838F", css)
+        self.assertIn("--jollypasta: #4DD0E1", css)
         self.assertIn("prefers-color-scheme: dark", css)
 
 
