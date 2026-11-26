@@ -23,7 +23,7 @@
  "last_seen_at": "2026-11-26",
  "status": "on_sale",
  "ended_observed_at": null,
- "missed_runs": 0,
+ "missed_runs": 1,
  "price_history": [
   {
    "date": "2026-11-23",
@@ -33,5 +33,6 @@
  "launch_search_runs": 0,
  "source_list": [
   "www.cocos-jpn.co.jp/menu/fair/"
- ]
+ ],
+ "last_miss_date": "2026-11-27"
 }

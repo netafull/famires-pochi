@@ -20,7 +20,7 @@
  "stores_note": null,
  "official_url": "https://www.jolly-pasta.co.jp/menu/season/r_oyster_ajillo.html",
  "first_seen_at": "2026-11-25T20:01:04+09:00",
- "last_seen_at": "2026-11-26",
+ "last_seen_at": "2026-11-27",
  "status": "on_sale",
  "ended_observed_at": null,
  "missed_runs": 0,
@@ -30,7 +30,7 @@
    "price": 869
   }
  ],
- "launch_search_runs": 2,
+ "launch_search_runs": 3,
  "source_list": [
   "www.jolly-pasta.co.jp/json/jp_menu.json"
  ]

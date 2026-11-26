@@ -377,7 +377,15 @@
    }
   ]
  },
- "errors": [],
- "fetched_at": "2026-11-26T09:21:39+09:00",
+ "errors": [
+  "dennys tag=None page=1: JSON解析失敗 Expecting value [13972バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "jonathan tag=None page=1: JSON解析失敗 Expecting value [13986バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "cocos tag=None page=1: JSON解析失敗 Expecting value [13902バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "bigboy tag=None page=1: JSON解析失敗 Expecting value [13990バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "joyfull tag=None page=1: JSON解析失敗 Expecting value [13890バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "steakdon tag=None page=1: JSON解析失敗 Expecting value [13957バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)",
+  "jollypasta tag=None page=1: JSON解析失敗 Expecting value [14023バイト, text/html, 先頭: '<!DOCTYPE html> <html lang=\"en\"> <head>   <meta charset=\"utf8\">   <meta name=\"viewport\" content=\"width=device-width,init']: line 1 column 1 (char 0)"
+ ],
+ "fetched_at": "2026-11-27T07:30:10+09:00",
  "matches": {}
 }
